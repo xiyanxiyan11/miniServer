@@ -1,0 +1,92 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BUF_SIZE	err_ctl.h	30;"	d
+CTL_DATA	err_ctl.h	43;"	d
+CTL_REPLAY	err_ctl.h	44;"	d
+DBG	err_ctl.h	40;"	d
+ERR_CTL__H	err_ctl.h	18;"	d
+FAILED	err_ctl.h	28;"	d
+GetTicks	err_ctl.c	/^uint32 GetTicks()$/;"	f
+LINE_MTU	err_ctl.h	31;"	d
+MAX_BUF_SIZE	udp.h	5;"	d
+NULL_STATUS	err_ctl.h	32;"	d
+RECV_MAG_DATA	err_ctl.h	33;"	d
+RECV_MAG_REPLAY	err_ctl.h	34;"	d
+RETRANS_NUM	err_ctl.h	38;"	d
+RETRANS_TIME	err_ctl.h	37;"	d
+SEND_MAG_DATA	err_ctl.h	35;"	d
+SEND_MAG_REPLAY	err_ctl.h	36;"	d
+SERVER_PORT	udp.h	4;"	d
+SUCCESS	err_ctl.h	27;"	d
+UDP_H__	udp.h	2;"	d
+UINT8MAX	err_ctl.h	29;"	d
+ctl_chk_data_whole	err_ctl.c	/^static uint32 ctl_chk_data_whole(err_ctl_handle_t *p_handle)$/;"	f	file:
+ctl_chk_status	err_ctl.c	/^void ctl_chk_status(err_ctl_handle_t *p_handle)$/;"	f
+ctl_handle_data	err_ctl.c	/^static void ctl_handle_data(void *packet, uint32 len, err_ctl_handle_t *p_handle)$/;"	f	file:
+ctl_handle_replay	err_ctl.c	/^static void ctl_handle_replay(void *ctl_packet, err_ctl_handle_t *p_handle)$/;"	f	file:
+ctl_init	err_ctl.c	/^void ctl_init(err_ctl_handle_t *p_handle_r, err_ctl_handle_t *p_handle_s, void (*send_func)(void *data, uint32 len))$/;"	f
+ctl_packaging	err_ctl.c	/^void ctl_packaging(err_ctl_handle_t *p_handle)$/;"	f
+ctl_packaging_by_num	err_ctl.c	/^static void ctl_packaging_by_num(uint8 p_num, err_ctl_handle_t *p_handle)$/;"	f	file:
+ctl_packet_dispatch	err_ctl.c	/^void ctl_packet_dispatch(void *packet, uint32 data_len, $/;"	f
+ctl_retran_last_data	err_ctl.c	/^static void ctl_retran_last_data(err_ctl_handle_t *p_handle)$/;"	f	file:
+ctl_send_replay	err_ctl.c	/^static void ctl_send_replay(err_ctl_handle_t *p_handle)$/;"	f	file:
+ctl_status	err_ctl.h	/^    uint8 ctl_status;       \/\/管理数据处理状态$/;"	m	struct:err_ctl_handle_
+data	err_ctl.h	/^	uint8 data[4];	\/\/数据$/;"	m	struct:err_ctl_
+data	err_ctl.h	/^	uint8 data[4];	\/\/数据$/;"	m	struct:err_ctl_replay_
+data	err_ctl.h	/^    uint8 data[4];$/;"	m	struct:esp_
+err_ctl_	err_ctl.h	/^typedef struct err_ctl_$/;"	s
+err_ctl_handle_	err_ctl.h	/^typedef struct err_ctl_handle_$/;"	s
+err_ctl_handle_t	err_ctl.h	/^}err_ctl_handle_t;$/;"	t	typeref:struct:err_ctl_handle_
+err_ctl_replay_	err_ctl.h	/^typedef struct err_ctl_replay_$/;"	s
+err_ctl_replay_t	err_ctl.h	/^} err_ctl_replay_t;$/;"	t	typeref:struct:err_ctl_replay_
+err_ctl_t	err_ctl.h	/^} err_ctl_t;$/;"	t	typeref:struct:err_ctl_
+err_d	err_ctl.h	/^		err_ctl_t err_d;$/;"	m	union:err_pkt_::__anon1
+err_pkt_	err_ctl.h	/^typedef struct err_pkt_$/;"	s
+err_pkt_t	err_ctl.h	/^}err_pkt_t;$/;"	t	typeref:struct:err_pkt_
+err_r	err_ctl.h	/^		err_ctl_replay_t err_r;$/;"	m	union:err_pkt_::__anon1
+err_t	err_ctl.h	/^	}err_t;$/;"	m	struct:err_pkt_	typeref:union:err_pkt_::__anon1
+esp_	err_ctl.h	/^typedef struct esp_$/;"	s
+esp_head	err_ctl.h	/^    esp_t esp_head;$/;"	m	struct:err_pkt_
+esp_t	err_ctl.h	/^}esp_t;$/;"	t	typeref:struct:esp_
+fd	err_ctl.c	/^int fd = 0;$/;"	v
+g_num	err_ctl.h	/^	uint8 g_num;	\/\/组序$/;"	m	struct:err_ctl_
+g_num	err_ctl.h	/^	uint8 g_num;	\/\/组序$/;"	m	struct:err_ctl_replay_
+gloab_data_r	err_ctl.c	/^uint8 gloab_data_r[BUF_SIZE] = {0};$/;"	v
+gloab_data_s	err_ctl.c	/^uint8 gloab_data_s[BUF_SIZE] = {0};$/;"	v
+gloab_handle_r	err_ctl.c	/^err_ctl_handle_t gloab_handle_r;$/;"	v
+gloab_handle_s	err_ctl.c	/^err_ctl_handle_t gloab_handle_s;$/;"	v
+gloab_send_buf	err_ctl.c	/^uint8 gloab_send_buf[BUF_SIZE] = {0};$/;"	v
+group_rnd	err_ctl.h	/^    uint8 group_rnd;        \/\/管理数据组序列号$/;"	m	struct:err_ctl_handle_
+int16	err_ctl.h	/^typedef short int16;$/;"	t
+int32	err_ctl.h	/^typedef int   int32;$/;"	t
+int8	err_ctl.h	/^typedef char  int8;$/;"	t
+line_mtu	err_ctl.h	/^    uint32 line_mtu;        \/\/线路MTU$/;"	m	struct:err_ctl_handle_
+lose_cnt	err_ctl.h	/^	uint8 lose_cnt;	\/\/包序$/;"	m	struct:err_ctl_replay_
+mag_data	err_ctl.h	/^    uint8 *mag_data;        \/\/管理数据缓存BUF$/;"	m	struct:err_ctl_handle_
+mag_data_len	err_ctl.h	/^    uint32 mag_data_len;    \/\/管理数据长度$/;"	m	struct:err_ctl_handle_
+main	partner.c	/^int main() $/;"	f
+p_cnt	err_ctl.h	/^	uint8 p_cnt;	\/\/包数$/;"	m	struct:err_ctl_
+p_num	err_ctl.h	/^	uint8 p_num;	\/\/包序$/;"	m	struct:err_ctl_
+pad	err_ctl.h	/^	uint8 pad;		\/\/填充0$/;"	m	struct:err_ctl_replay_
+pkt_cnt	err_ctl.c	/^uint8 pkt_cnt[UINT8MAX] = {0};			\/\/flag the recv p_num$/;"	v
+pkt_cnt	err_ctl.h	/^    uint8 *pkt_cnt;         \/\/管理数据统计BUF$/;"	m	struct:err_ctl_handle_
+pkt_cnt_num	err_ctl.h	/^    uint8 pkt_cnt_num;      \/\/管理数据包个数$/;"	m	struct:err_ctl_handle_
+retrans_num	err_ctl.h	/^    uint32 retrans_num;     \/\/重传次数$/;"	m	struct:err_ctl_handle_
+send_buf	err_ctl.h	/^    uint8 *send_buf;        \/\/管理数据发送BUF$/;"	m	struct:err_ctl_handle_
+send_func	err_ctl.h	/^    void (*send_func)(void *data, uint32 len);$/;"	m	struct:err_ctl_handle_
+seq	err_ctl.h	/^    uint16 seq;$/;"	m	struct:esp_
+sockfd	partner.c	/^int sockfd = 0;$/;"	v
+spi	err_ctl.h	/^    uint16 spi;$/;"	m	struct:esp_
+time_tick	err_ctl.h	/^    uint32 time_tick;       \/\/管理数据处理完成时间$/;"	m	struct:err_ctl_handle_
+type	err_ctl.h	/^	uint8 type;		\/\/类型$/;"	m	struct:err_ctl_
+type	err_ctl.h	/^	uint8 type;		\/\/类型$/;"	m	struct:err_ctl_replay_
+udp_send_msg	udp.c	/^void udp_send_msg(void* data, unsigned int data_len)$/;"	f
+udp_server_creat	udp.c	/^int udp_server_creat()$/;"	f
+uint16	err_ctl.h	/^typedef unsigned short uint16;$/;"	t
+uint32	err_ctl.h	/^typedef unsigned int   uint32;$/;"	t
+uint8	err_ctl.h	/^typedef unsigned char  uint8;$/;"	t
+whole_flag	err_ctl.h	/^    uint8 whole_flag;       \/\/管理数据接收完整标识$/;"	m	struct:err_ctl_handle_
