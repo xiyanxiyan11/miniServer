@@ -36,7 +36,7 @@ struct peer* peer_lookup_drole(struct list *list, int drole);
 struct peer* peer_lookup_role(struct list *list, int role);
 int sockunion_udp_socket (union sockunion *su);
 int sockunion_tcp_socket (union sockunion *su);
-int bgs_connect_success ( struct peer *peer );
+int bgs_start_success ( struct peer *peer );
 int bgs_start(struct peer *peer);
 int bgs_write_proceed(struct stream_fifo *obuf);
 struct stream* bgs_write_packet(struct stream_fifo *obuf);
@@ -102,6 +102,7 @@ void dump_peer(struct peer *peer){
 
 //color one packet
 void stream_color_one(struct stream *to, struct stream *from){
+        
         to->type = from->type;
         to->src = from->src; 
         to->dst = from->dst;
@@ -346,7 +347,6 @@ int bgs_stop ( struct peer *peer )
 	if(1 == ev_is_active(peer->t_write))
 	    ev_io_stop(peer->loop, peer->t_write);
     	
-
     	if(1 == peer->quick){   
              zlog_debug("stop peer fd %d in quick\n", peer->fd);    	
     	}else{
@@ -600,7 +600,7 @@ int sockunion_create_socket (union sockunion *su)
 }
 
 //action when connect success
-int bgs_connect_success ( struct peer *peer )
+int bgs_start_success ( struct peer *peer )
 {
         zlog_debug("bgs connect peer->fd: %d success\n", peer->fd);
 	//set connect status;
@@ -638,7 +638,7 @@ int bgs_connect_success ( struct peer *peer )
 
 
 //action when connect progress
-int bgs_connect_progress ( struct peer *peer )
+int bgs_start_progress ( struct peer *peer )
 {
 
         zlog_debug("bgs connect progress\n");
@@ -669,13 +669,13 @@ void connect_status_trigger(int status, struct peer *peer){
     	{
         	case connect_success:	
         	        zlog_debug("connect in success\n");
-        	        bgs_connect_success(peer);
+        	        bgs_start_success(peer);
         	        if(1 == ev_is_active(peer->t_connect));
         	            ev_periodic_stop(peer->loop, peer->t_connect);
         	        break;
         	case connect_in_progress:	
         	        zlog_debug("connect in progress\n");
-                        bgs_connect_progress( peer);
+                        bgs_start_progress( peer);
         	        if(1 == ev_is_active(peer->t_connect));
         	            ev_periodic_stop(peer->loop, peer->t_connect);
                         break;
@@ -714,7 +714,7 @@ void bgs_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int even
 //entry to active peer
 int bgs_start(struct peer *peer){
         if(peer->quick){                //not connect, just build
-            bgs_connect_success(peer);
+            bgs_start_success(peer);
         }else{
             //init timer here
 	    peer->t_connect  = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
@@ -912,6 +912,8 @@ void bgs_read(struct ev_loop *loop, struct ev_io *handle, int events)
     
     //real read, 
     ret = peer->read(peer);
+
+    zlog_debug("io %d get\n",ret);
 
     //check packet by unpack
     if(ret == IO_CHECK){

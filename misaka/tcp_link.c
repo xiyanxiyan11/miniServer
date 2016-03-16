@@ -62,6 +62,7 @@ int tcp_read(struct peer* peer)
 {
 	int nbytes;
 	int type;
+	int close = 0;
 
         //zlog_debug("tcp read trigger with packet %d\n", peer->obuf->count);
 
@@ -70,10 +71,21 @@ int tcp_read(struct peer* peer)
   	nbytes = read(peer->fd, peer->ibuf->data, peer->packet_size);
   	peer->ibuf->endp = nbytes;
 
-
   	/* If read byte is smaller than zero then error occured. */
-  	if (nbytes <= 0) 
+  	if (nbytes < 0) 
   	{
+            if(errno == 0 || errno == EINTR || errno == EAGAIN)
+                return IO_CHECK; //need read again
+            else{
+                close = 1;
+            }
+        }   
+  	
+  	if(nbytes == 0){
+  	    close = 1;    
+  	}
+        
+        if(close){
             //zlog_debug("tcp read error trigger:%s\n",strerror(errno));
             if(peer->mode == MODE_PASSIVE)
                 return IO_PASSIVE_CLOSE;
