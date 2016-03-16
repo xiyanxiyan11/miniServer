@@ -14,12 +14,12 @@ struct peer* peer_ludp_create(const char *spath, const char *dpath)
  
         //init the src union
         memset(&peer->lsu, 0, sizeof(struct sockaddr_un));
-        snprintf(peer->lsu.sun_path, sizeof(peer->lsu.sun_path), spath);
+        snprintf(peer->lsu.sun_path, sizeof(peer->lsu.sun_path), "%s", spath);
         peer->lsu.sun_family = AF_UNIX;
         
         //init the src union
         memset(&peer->ldsu, 0, sizeof(struct sockaddr_un));
-        snprintf(peer->ldsu.sun_path, sizeof(peer->ldsu.sun_path), dpath);
+        snprintf(peer->ldsu.sun_path, sizeof(peer->ldsu.sun_path), "%s", dpath);
         peer->ldsu.sun_family = AF_UNIX;
 
 	peer->type = TYPE_LUDP;

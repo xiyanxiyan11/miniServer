@@ -217,7 +217,7 @@ static inline void sem_down(int sem){
 
 static inline void debug_obj(struct obj *ptr, int mem_size) 
 {						
-		printf("obj(x%x):", ptr); 
+		printf("obj(x%p):", ptr); 
 		check_overflow(ptr->buf, mem_size) ? printf("overflow") : printf("safe");
 		printf("\n");
 }

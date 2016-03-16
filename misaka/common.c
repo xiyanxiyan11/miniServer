@@ -170,7 +170,7 @@ int get_gateway(char *gw)
 	char msg[64];
 	char *via;
 	FILE *fpin;
-	
+	int a, b, c, d;
 	memset(gw,0,4);
 	if((fpin = popen("ip route show|grep default","r")) == NULL)
 		return -1;
@@ -178,7 +178,11 @@ int get_gateway(char *gw)
 	{
 		if((via = strstr(msg,"via")) != NULL)
 		{
-			sscanf(via+4,"%d.%d.%d.%d ",&gw[0],&gw[1],&gw[2],&gw[3]);
+		        a = gw[0];
+		        b = gw[1];
+		        c = gw[2];
+		        d = gw[3];
+			sscanf(via+4,"%d.%d.%d.%d ",&a, &b,&c,&d);
 			pclose(fpin);
 			return 0;
 		}
