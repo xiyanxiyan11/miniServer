@@ -13,7 +13,7 @@ ALL_LIST_ELEMENTS_RO	linklist.h	103;"	d
 BGP_MODE	bgs.h	/^enum BGP_MODE{$/;"	g
 BGP_TAT	bgs.h	/^enum BGP_TAT{$/;"	g
 BGP_TYPE	bgs.h	/^enum BGP_TYPE{$/;"	g
-BGSNIPQUAD	bgs.h	90;"	d
+BGSNIPQUAD	bgs.h	89;"	d
 BGS_DEFAULT_CONNECT_RETRY	bgs.h	44;"	d
 BGS_DEFAULT_HOLDTIME	bgs.h	42;"	d
 BGS_DEFAULT_KEEPALIVE	bgs.h	43;"	d
@@ -37,8 +37,8 @@ BYTE_ORDER	zebra.h	286;"	d
 CC	Makefile	/^CC = gcc$/;"	m
 CHECK_FLAG	zebra.h	432;"	d
 CHECK_SIZE	stream.c	79;"	d	file:
-CHECK_TAT	bgs.h	226;"	d
-CLEA_TAT	bgs.h	225;"	d
+CHECK_TAT	bgs.h	224;"	d
+CLEA_TAT	bgs.h	223;"	d
 CMSG_LEN	zebra.h	223;"	d
 CMSG_SPACE	zebra.h	216;"	d
 CONFIGFILE_MASK	zebra.h	30;"	d
@@ -55,8 +55,8 @@ DEBUG_MAX	log.h	/^    DEBUG_MAX,$/;"	e	enum:DEBUG_LEVEL
 DEBUG_NONE	log.h	/^    DEBUG_NONE = 0,$/;"	e	enum:DEBUG_LEVEL
 DEBUG_NOTICE	log.h	/^    DEBUG_NOTICE,$/;"	e	enum:DEBUG_LEVEL
 DEBUG_WARN	log.h	/^    DEBUG_WARN,$/;"	e	enum:DEBUG_LEVEL
-DISPATCH_INTERVAL	bgs.h	99;"	d
-DISTRIBUTE_INTERVAL	bgs.h	98;"	d
+DISPATCH_INTERVAL	bgs.h	97;"	d
+DISTRIBUTE_INTERVAL	bgs.h	96;"	d
 ENDP_VALID	stream.c	38;"	d	file:
 ERRNO_IO_RETRY	network.h	37;"	d
 EVENT_ECHO	gcp.h	/^    EVENT_ECHO,$/;"	e	enum:EVENT_TYPE
@@ -78,7 +78,7 @@ GCP_HEADER_SIZE	gcp.h	36;"	d
 GCP_VERSION	gcp.h	7;"	d
 GETP_VALID	stream.c	35;"	d	file:
 GETRUSAGE	thread.h	34;"	d
-GPIO_SYS_PATH	common.c	736;"	d	file:
+GPIO_SYS_PATH	common.c	740;"	d	file:
 HASHTABSIZE	hash.h	25;"	d
 HAVE_IP_HDRINCL_BSD_ORDER	zebra.h	271;"	d
 IN6_LINKLOCAL_IFINDEX	sockunion.h	66;"	d
@@ -337,7 +337,7 @@ OFS	kmem.c	20;"	d	file:
 ONE_DAY_SECOND	core.c	276;"	d	file:
 ONE_WEEK_SECOND	core.c	277;"	d	file:
 PDP_ENDIAN	zebra.h	281;"	d
-PEER_OLD_TIME	bgs.h	102;"	d
+PEER_OLD_TIME	bgs.h	99;"	d
 PNBBY	prefix.c	36;"	d	file:
 PREFIX_COPY_IPV4	prefix.h	159;"	d
 PREFIX_FAMILY	prefix.h	116;"	d
@@ -348,7 +348,7 @@ QUAGGA_CLK_REALTIME	thread.h	/^  QUAGGA_CLK_REALTIME = 0,	\/* ala gettimeofday()
 QUAGGA_CLK_REALTIME_STABILISED	thread.h	/^  QUAGGA_CLK_REALTIME_STABILISED, \/* like realtime, but non-decrementing *\/$/;"	e	enum:quagga_clkid
 QUAGGA_SIGNAL_TIMER_INTERVAL	sigevent.h	29;"	d
 Q_SIGC	sigevent.h	30;"	d
-RECONNECT_INTERVAL	bgs.h	97;"	d
+RECONNECT_INTERVAL	bgs.h	95;"	d
 ROLE_SERVER	gcp.h	33;"	d
 ROLE_TCP	gcp.h	32;"	d
 ROLE_UDP	gcp.h	31;"	d
@@ -363,7 +363,7 @@ SET_DEBUG	log.h	30;"	d
 SET_FLAG	zebra.h	433;"	d
 SET_IN6_LINKLOCAL_IFINDEX	sockunion.h	67;"	d
 SET_IN6_LINKLOCAL_IFINDEX	sockunion.h	74;"	d
-SET_TAT	bgs.h	224;"	d
+SET_TAT	bgs.h	222;"	d
 SKYNET_MESSAGE_QUEUE_H	skynet_mq.h	2;"	d
 SKYNET_RWLOCK_H	rwlock.h	2;"	d
 SKYNET_SPINLOCK_H	spinlock.h	2;"	d
@@ -429,7 +429,7 @@ VTY_SHELL	thread.h	/^enum {VTY_TERM, VTY_FILE, VTY_SHELL, VTY_SHELL_SERV} type;$
 VTY_SHELL_SERV	thread.h	/^enum {VTY_TERM, VTY_FILE, VTY_SHELL, VTY_SHELL_SERV} type;$/;"	e	enum:__anon4
 VTY_TERM	thread.h	/^enum {VTY_TERM, VTY_FILE, VTY_SHELL, VTY_SHELL_SERV} type;$/;"	e	enum:__anon4
 WANT_OSPF_WRITE_FRAGMENT	zebra.h	256;"	d
-WATCH_INTERVAL	bgs.h	100;"	d
+WATCH_INTERVAL	bgs.h	98;"	d
 W_LP_STATE_GPIO40	common.h	87;"	d
 W_TX_INT_GPIO41	common.h	88;"	d
 XCALLOC	memory.h	42;"	d
@@ -596,7 +596,6 @@ check_wan_link	common.c	/^int check_wan_link(int num)$/;"	f
 clktick_init	common.c	/^void clktick_init(void)$/;"	f
 cmp	linklist.h	/^  int (*cmp) (void *val1, void *val2);$/;"	m	struct:list
 cond	thpool.c	/^	pthread_cond_t   cond;$/;"	m	struct:bsem	file:
-connect	bgs.h	/^        int ( *connect)(struct peer *peer);                         \/\/connect handle$/;"	m	struct:peer
 connect_error	sockunion.h	/^  connect_error,$/;"	e	enum:connect_result
 connect_in_progress	sockunion.h	/^  connect_in_progress,$/;"	e	enum:connect_result
 connect_passive	sockunion.h	/^  connect_passive,$/;"	e	enum:connect_result
@@ -1070,7 +1069,9 @@ spinlock_unlock	spinlock.h	/^spinlock_unlock(struct spinlock *lock) {$/;"	f
 src	bgs.h	/^	int src;                             \/*which this peer link to*\/$/;"	m	struct:peer
 src	gcp.h	/^	int src;                            \/\/packet src$/;"	m	struct:gcp_message
 src	stream.h	/^  int src;              \/\/where are you from?$/;"	m	struct:stream
+start	bgs.h	/^        int ( *start)  (struct peer *peer);                         \/\/peer start$/;"	m	struct:peer
 status	bgs.h	/^	int status;			     \/*peer status*\/$/;"	m	struct:peer
+stop	bgs.h	/^        int ( *stop )  (struct peer *peer);                         \/\/peer stop$/;"	m	struct:peer
 stop_process	common.c	/^int stop_process(char *name)$/;"	f
 str	log.h	/^  const char *str;$/;"	m	struct:message
 str2prefix	prefix.c	/^str2prefix (const char *str, struct prefix *p)$/;"	f

@@ -586,19 +586,6 @@ struct peer* peer_lookup_role(struct list *list, int role)
 	return NULL;
 }
 
-//init socket
-int sockunion_create_socket (union sockunion *su)
-{
-  int sock;
-  sock = socket (su->sa.sa_family, SOCK_DGRAM, 0);
-  if (sock < 0)
-    {
-      return -1;
-    }
-
-  return sock;
-}
-
 //action when connect success
 int bgs_start_success ( struct peer *peer )
 {
@@ -1098,10 +1085,12 @@ int core_init(void)
    	signal(SIGINT,sighandle);
 
 #if 0
-   	//init mem manager
+   	//TODO open share mem here
    	void *mem = malloc(BGS_MEM_SIZE);
    	if(!mem){
    	    zlog_err("alloc mem for cache fail\n");
+   	}else{
+   	    zlog_err("alloc mem for cache success\n");
    	}
 
    	bgs_servant.kmem = init_kmem(mem, BGS_MEM_SIZE, BGS_MEM_ALIGN);
@@ -1110,18 +1099,24 @@ int core_init(void)
    	if(bgs_servant.stream_cache){
    	    zlog_err("alloc cache for stream fail\n");
    	    return -1;
+   	}else{
+   	    zlog_err("alloc cache for stream success\n");
    	}
 
    	bgs_servant.data_cache   = kmem_cache_create(bgs_servant.kmem, "data",   BGS_MAX_PACKET_SIZE,   BGS_MAX_DATA);
    	if(bgs_servant.data_cache){
    	    zlog_err("alloc cache for data fail\n");
    	    return -1;
+   	}else{
+   	    zlog_err("alloc cache for data success\n");
    	}
 
    	bgs_servant.peer_cache   =  kmem_cache_create(bgs_servant.kmem, "peer", sizeof(struct peer),    BGS_MAX_PEER);
    	if(bgs_servant.peer_cache){
    	    zlog_err("alloc cache for peer fail\n");
    	    return -1;
+   	}else{
+   	    zlog_err("alloc cache for peer success\n");
    	}
 #endif
 

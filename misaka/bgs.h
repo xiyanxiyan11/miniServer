@@ -26,10 +26,10 @@
 #define BGS_MAX_QUEUE_PACKET               12
 #define	BGS_WRITE_PACKET_MAX	           30
 
-#define BGS_MEM_SIZE                        (1024*1024*100)
+#define BGS_MEM_SIZE                        (1024)
 #define BGS_MEM_ALIGN                       8
-#define BGS_MAX_PEER                        (2000)
-#define BGS_MAX_STREAM                      (8000)
+#define BGS_MAX_PEER                        (20)
+#define BGS_MAX_STREAM                      (80)
 #define BGS_MAX_DATA                        (BGS_MAX_STREAM)
 
 
