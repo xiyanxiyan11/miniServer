@@ -913,7 +913,7 @@ void bgs_read(struct ev_loop *loop, struct ev_io *handle, int events)
     //real read, 
     ret = peer->read(peer);
 
-    zlog_debug("io %d get\n",ret);
+    //zlog_debug("io %d get\n",ret);
 
     //check packet by unpack
     if(ret == IO_CHECK){

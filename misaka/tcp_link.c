@@ -74,7 +74,7 @@ int tcp_read(struct peer* peer)
   	/* If read byte is smaller than zero then error occured. */
   	if (nbytes < 0) 
   	{
-            if(errno == 0 || errno == EINTR || errno == EAGAIN)
+            if(errno == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
                 return IO_CHECK; //need read again
             else{
                 close = 1;
