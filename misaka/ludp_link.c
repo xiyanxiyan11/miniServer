@@ -69,20 +69,20 @@ int ludp_read(struct peer* peer)
 	int src;
 	int dst;
   	int readsize;
-  	char buf[BGS_HEADER_SIZE] = {0};          //empty buffer
+  	char buf[MISAKA_HEADER_SIZE] = {0};          //empty buffer
         struct sockaddr_un lsu;
         int len;
         unsigned char *ptr;         //used to set route place
         gcp_message_t *hp;
 
         if (peer->packet_size == 0)
-            peer->packet_size = BGS_MAX_PACKET_SIZE;
+            peer->packet_size = MISAKA_MAX_PACKET_SIZE;
 
         lsu = peer->lsu;
         len = sizeof(struct sockaddr_un);
 
   	/* readpacket from fd. */
-        nbytes = stream_recvfrom (peer->ibuf, peer->fd, BGS_MAX_PACKET_SIZE, 0, (struct sockaddr*)&lsu, &len);  
+        nbytes = stream_recvfrom (peer->ibuf, peer->fd, MISAKA_MAX_PACKET_SIZE, 0, (struct sockaddr*)&lsu, &len);  
 
   	/* If read byte is smaller than zero then error occured. */
   	if (nbytes < 0) 
@@ -103,7 +103,7 @@ int ludp_write(struct peer *peer){
   	unsigned int count = 0;
       	int writenum;
       	char ip[256];
-  	char buf[BGS_HEADER_SIZE] = {0};          //empty buffer
+  	char buf[MISAKA_HEADER_SIZE] = {0};          //empty buffer
         
         //get first stream;
   	s = bgs_write_packet (peer->obuf);
@@ -114,7 +114,7 @@ int ludp_write(struct peer *peer){
   	do
         {
                 //cut reverse header
-                stream_get(buf, s, BGS_HEADER_SIZE);
+                stream_get(buf, s, MISAKA_HEADER_SIZE);
 			
       		/* Number of bytes to be sent.  */
       		writenum = stream_get_endp (s) - stream_get_getp (s);
@@ -135,7 +135,7 @@ int ludp_write(struct peer *peer){
    
       		/*OK we send packet so delete packet. */
       		bgs_packet_delete (peer->obuf);
-    	 }while (++count < BGS_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
+    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
          return 0;  
 }
 

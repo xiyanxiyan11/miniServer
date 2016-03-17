@@ -16,7 +16,7 @@ struct peer* peer_sdio_create(const char *path)
 	if (NULL == peer)
 		return NULL;
 
-	snprintf(peer->path, (size_t)BGS_PATH_SIZE, "%s", path);
+	snprintf(peer->path, (size_t)MISAKA_PATH_SIZE, "%s", path);
 	peer->type = TYPE_SDIO;
 	peer->mode = MODE_CONNECT;
 	peer->status = TAT_IDLE;
@@ -31,7 +31,7 @@ int sdio_read(struct peer* peer)
 
         /* Read packet header to determine type of the packet */
         if (peer->packet_size == 0)
-            peer->packet_size = BGS_MAX_PACKET_SIZE;
+            peer->packet_size = MISAKA_MAX_PACKET_SIZE;
 
   	nbytes = stream_read(peer->ibuf, peer->fd, peer->packet_size);
 
@@ -87,7 +87,7 @@ int sdio_write(struct peer *peer){
    
       		/*OK we send packet so delete packet. */
       		bgs_packet_delete (peer->obuf);
-    	 }while (++count < BGS_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
+    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
          return 0;  
 }
 

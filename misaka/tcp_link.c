@@ -66,7 +66,7 @@ int tcp_read(struct peer* peer)
 
         //zlog_debug("tcp read trigger with packet %d\n", peer->obuf->count);
 
-        peer->packet_size = BGS_MAX_PACKET_SIZE/2;
+        peer->packet_size = MISAKA_MAX_PACKET_SIZE/2;
 
   	nbytes = read(peer->fd, peer->ibuf->data, peer->packet_size);
   	peer->ibuf->endp = nbytes;
@@ -158,7 +158,7 @@ int tcp_write(struct peer *peer){
       		    pcount++;
       		}
 
-    	 }while (count < BGS_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
+    	 }while (count < MISAKA_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
          return pcount;  
 }
 

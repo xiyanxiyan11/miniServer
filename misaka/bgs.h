@@ -1,5 +1,5 @@
-#ifndef __BGS_H_
-#define __BGS_H_
+#ifndef __MISAKA_H_
+#define __MISAKA_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,28 +22,29 @@
 #include "kmem.h"
 #include "gcp.h"
 
-#define	BGS_UPTIME_LEN	                   25
-#define BGS_MAX_QUEUE_PACKET               12
-#define	BGS_WRITE_PACKET_MAX	           30
+#define	MISAKA_UPTIME_LEN	                   25
+#define MISAKA_MAX_QUEUE_PACKET               12
+#define	MISAKA_WRITE_PACKET_MAX	           30
 
-#define BGS_MEM_SIZE                        (1024)
-#define BGS_MEM_ALIGN                       8
-#define BGS_MAX_PEER                        (20)
-#define BGS_MAX_STREAM                      (80)
-#define BGS_MAX_DATA                        (BGS_MAX_STREAM)
-
-
-
-#define BGS_THREAD_NUM                        1
-//#define BGS_THREAD_SUPPORT                  1
+#define MISAKA_MEM_SIZE                        (1024)
+#define MISAKA_SHM_KEY                         1234
+#define MISAKA_MEM_ALIGN                       8
+#define MISAKA_MAX_PEER                        (20)
+#define MISAKA_MAX_STREAM                      (80)
+#define MISAKA_MAX_DATA                        (MISAKA_MAX_STREAM)
 
 
-#define BGS_INIT_START_TIMER  			5
-#define BGS_DEFAULT_HOLDTIME               	180
-#define BGS_DEFAULT_KEEPALIVE              	60
-#define BGS_DEFAULT_CONNECT_RETRY  	        30
-#define BGS_DEFAULT_SCAN_TIMER		        15	    
-#define BGS_PATH_SIZE				128
+
+#define MISAKA_THREAD_NUM                        1
+//#define MISAKA_THREAD_SUPPORT                  1
+
+
+#define MISAKA_INIT_START_TIMER  			5
+#define MISAKA_DEFAULT_HOLDTIME               	180
+#define MISAKA_DEFAULT_KEEPALIVE              	60
+#define MISAKA_DEFAULT_CONNECT_RETRY  	        30
+#define MISAKA_DEFAULT_SCAN_TIMER		        15	    
+#define MISAKA_PATH_SIZE				128
 
 /* link status */
 enum BGP_TAT{
@@ -86,7 +87,7 @@ enum IO_TAT{
 };
 
 /* addr in network byteorder */
-#define BGSNIPQUAD(addr) \
+#define MISAKANIPQUAD(addr) \
 	((unsigned char *)&(addr))[0], \
 	((unsigned char *)&(addr))[1], \
 	((unsigned char *)&(addr))[2], \
@@ -113,7 +114,7 @@ struct peer{
 
 	unsigned short port;                 /* Destination port for peer */
 	char *host;			     /* Printable address of the peer. */
-	char path[BGS_PATH_SIZE];	     //path buffer used for device
+	char path[MISAKA_PATH_SIZE];	     //path buffer used for device
 
   	int type;                   	     /*peer type*/
 	int status;			     /*peer status*/
@@ -197,7 +198,7 @@ struct global_servant{
     
     struct ev_periodic *t_watch;             /*watch the bgs status*/
 
-            
+    struct shmhandle *shm;           
     struct kmem *kmem;                       /*manager all mem*/
     struct kmem_cache *peer_cache;           /*manager all peer cache*/ 
     struct kmem_cache *stream_cache;         /*manager all stream cache*/
@@ -259,5 +260,5 @@ extern struct global_config bgs_config;    //local config handle
 extern struct global_servant bgs_servant;  //local servant handle    
 
 
-#endif /* __BGS_H_ */
+#endif /* __MISAKA_H_ */
 

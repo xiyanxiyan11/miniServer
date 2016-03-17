@@ -5,6 +5,7 @@
 #include "math.h"
 #include "thpool.h"
 #include "tasklist.h"
+#include "shm.h"
 
 //config manger
 struct global_config bgs_config;    //local config handle
@@ -114,7 +115,7 @@ void stream_color_one(struct stream *to, struct stream *from){
 
 //clone one not in deep
 struct stream * stream_clone_one(struct stream *from){
-        struct stream *to = stream_new(BGS_MAX_PACKET_SIZE);
+        struct stream *to = stream_new(MISAKA_MAX_PACKET_SIZE);
         stream_color_one(to, from);
         stream_put(to, STREAM_PNT(from), stream_get_endp(from) - stream_get_getp(from));
         return to;
@@ -226,7 +227,7 @@ void dump_packet(struct stream *s){
     dump_sockunion(&s->dsu);
 }
 
-/* BGS start timer jitter. */
+/* MISAKA start timer jitter. */
 int bgs_start_jitter ( int time )
 {
     return ( ( rand () % ( time + 1 ) ) - ( time / 2 ) );
@@ -234,7 +235,7 @@ int bgs_start_jitter ( int time )
 
 //reverse header
 void reverse_stream(struct stream *s, int size){
-    char buf[BGS_HEADER_SIZE] = {0};          //empty buffer
+    char buf[MISAKA_HEADER_SIZE] = {0};          //empty buffer
     unsigned char *from, *to;
     int i = 0;
     /*reverse header*/
@@ -254,7 +255,7 @@ char *peer_uptime (time_t uptime2, char *buf, size_t len,int type)
   	struct tm *tm;
 
   	/* Check buffer length. */
-  	if (len < BGS_UPTIME_LEN)
+  	if (len < MISAKA_UPTIME_LEN)
         {
       		/* XXX: should return status instead of buf... */
       		snprintf (buf, len, "<error> "); 
@@ -444,7 +445,7 @@ int peer_delete(struct peer* peer)
 	        free(peer->t_connect);
         }
 	/* Free peer structure. */
-	XFREE(MTYPE_BGS_PEER, peer);
+	XFREE(MTYPE_MISAKA_PEER, peer);
 	return 0;
 }
 
@@ -456,7 +457,7 @@ struct peer* peer_new()
 	struct stream *s;
 	
 	/* Allocate new peer. */
-	peer = XMALLOC(MTYPE_BGS_PEER, sizeof(struct peer));
+	peer = XMALLOC(MTYPE_MISAKA_PEER, sizeof(struct peer));
 	if (NULL == peer)
 		return NULL;
 
@@ -466,14 +467,14 @@ struct peer* peer_new()
 
 	/* Set default value. */
 	peer->fd = -1;
-	peer->v_connect = BGS_DEFAULT_CONNECT_RETRY;
+	peer->v_connect = MISAKA_DEFAULT_CONNECT_RETRY;
 
 	peer->status = TAT_IDLE;
 
 	/* Create buffers.  */
-	peer->ibuf = stream_new(BGS_MAX_PACKET_SIZE);
-	peer->ibuf->rlen = BGS_MAX_PACKET_SIZE;
-	peer->packet_size = BGS_MAX_PACKET_SIZE;
+	peer->ibuf = stream_new(MISAKA_MAX_PACKET_SIZE);
+	peer->ibuf->rlen = MISAKA_MAX_PACKET_SIZE;
+	peer->packet_size = MISAKA_MAX_PACKET_SIZE;
 	peer->obuf = stream_fifo_new();
 
         peer->read = NULL;
@@ -813,7 +814,7 @@ int read_io_action(int event, struct peer *peer){
             //send to it itsself, stolen it
             if(s->dst == bgs_config.role){
                 //push stream into task list
-#ifdef BGS_THREAD_SUPPORT
+#ifdef MISAKA_THREAD_SUPPORT
                     spinlock_lock(&bgs_servant.task_in->lock);
                         rs = stream_clone_one(s);
                         if(rs){
@@ -1078,6 +1079,7 @@ void bgs_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int events
 int core_init(void)
 {
         int i;
+        void *mem;
         INIT_DEBUG();
     	
     	//ignore pipe
@@ -1085,17 +1087,24 @@ int core_init(void)
    	signal(SIGINT,sighandle);
 
 #if 0
-   	//TODO open share mem here
-   	void *mem = malloc(BGS_MEM_SIZE);
+        bgs_servant.shm = shm_new(MISAKA_SHM_KEY, MISAKA_MEM_SIZE);
+        if(!bgs_servant.shm){
+            zlog_err("alloc shm manger fail\n");
+            return -1;
+        }else{
+            zlog_debug("alloc shm manager success\n");
+        }
+
+   	mem = shm_open(bgs_servant.shm);
    	if(!mem){
    	    zlog_err("alloc mem for cache fail\n");
    	}else{
    	    zlog_err("alloc mem for cache success\n");
    	}
 
-   	bgs_servant.kmem = init_kmem(mem, BGS_MEM_SIZE, BGS_MEM_ALIGN);
+   	bgs_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
 
-   	bgs_servant.stream_cache = kmem_cache_create(bgs_servant.kmem, "stream", sizeof(struct stream), BGS_MAX_STREAM);
+   	bgs_servant.stream_cache = kmem_cache_create(bgs_servant.kmem, "stream", sizeof(struct stream), MISAKA_MAX_STREAM);
    	if(bgs_servant.stream_cache){
    	    zlog_err("alloc cache for stream fail\n");
    	    return -1;
@@ -1103,7 +1112,7 @@ int core_init(void)
    	    zlog_err("alloc cache for stream success\n");
    	}
 
-   	bgs_servant.data_cache   = kmem_cache_create(bgs_servant.kmem, "data",   BGS_MAX_PACKET_SIZE,   BGS_MAX_DATA);
+   	bgs_servant.data_cache   = kmem_cache_create(bgs_servant.kmem, "data",   MISAKA_MAX_PACKET_SIZE,   MISAKA_MAX_DATA);
    	if(bgs_servant.data_cache){
    	    zlog_err("alloc cache for data fail\n");
    	    return -1;
@@ -1111,7 +1120,7 @@ int core_init(void)
    	    zlog_err("alloc cache for data success\n");
    	}
 
-   	bgs_servant.peer_cache   =  kmem_cache_create(bgs_servant.kmem, "peer", sizeof(struct peer),    BGS_MAX_PEER);
+   	bgs_servant.peer_cache   =  kmem_cache_create(bgs_servant.kmem, "peer", sizeof(struct peer),    MISAKA_MAX_PEER);
    	if(bgs_servant.peer_cache){
    	    zlog_err("alloc cache for peer fail\n");
    	    return -1;
@@ -1147,7 +1156,7 @@ int core_init(void)
 	    bgs_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
 
-#ifdef BGS_THREAD_SUPPORT
+#ifdef MISAKA_THREAD_SUPPORT
         //init task in list
 	if( NULL == (bgs_servant.task_in = tasklist_new())){
 		zlog_debug("Create task_list in failed!\r\n");
@@ -1177,7 +1186,7 @@ int core_init(void)
         ev_periodic_start(bgs_servant.loop, bgs_servant.t_distpatch);
 
 
-	bgs_servant.thpool = thpool_init(BGS_THREAD_NUM);
+	bgs_servant.thpool = thpool_init(MISAKA_THREAD_NUM);
 
 	if(!bgs_servant.thpool)
 	    return -1;

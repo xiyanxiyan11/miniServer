@@ -6,8 +6,8 @@
 /* GCP version */
 #define	GCP_VERSION	1
 
-#define	BGS_HEADER_SIZE		            8                   /* reverse header size*/
-#define	BGS_MAX_PACKET_SIZE	            1500		/* packet max size*/
+#define	MISAKA_HEADER_SIZE		            8                   /* reverse header size*/
+#define	MISAKA_MAX_PACKET_SIZE	            1500		/* packet max size*/
 
 #define TCP_DSTIP                           "127.0.0.1"
 #define TCP_DSTPORT                         11111
