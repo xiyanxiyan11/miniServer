@@ -972,7 +972,6 @@ int misaka_packet_route(struct stream *s){
     p.drole = s->dst;
     peer = (struct peer *)peer_lookup( (void *)&p);
     
-    zlog_debug("lookup peer %p\n", data);
     //drop it
     if(!peer){  
         zlog_debug("packet to unknown peer\n");
