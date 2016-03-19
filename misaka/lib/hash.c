@@ -74,8 +74,10 @@ hash_get (struct hash *hash, void *data, void * (*alloc_func) (void *))
   index = key % hash->size;
 
   for (backet = hash->index[index]; backet != NULL; backet = backet->next) 
-    if (backet->key == key && (*hash->hash_cmp) (backet->data, data))
-      return backet->data;
+    if (backet->key == key && (*hash->hash_cmp) (backet->data, data)){
+        printf("packet find %p\n", backet->data);
+        return backet->data;
+    }
 
   if (alloc_func)
     {

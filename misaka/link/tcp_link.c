@@ -1,4 +1,4 @@
-#include "bgs.h"
+#include "misaka.h"
 #include "common.h"
 #include "network.h"
 #include "string.h"
@@ -69,6 +69,7 @@ int tcp_read(struct peer* peer)
         peer->packet_size = MISAKA_MAX_PACKET_SIZE/2;
 
   	nbytes = read(peer->fd, peer->ibuf->data, peer->packet_size);
+  	zlog_debug("%d bytes read from peer %d, drole %d\n", nbytes, peer->fd, peer->drole);
   	peer->ibuf->endp = nbytes;
 
   	/* If read byte is smaller than zero then error occured. */

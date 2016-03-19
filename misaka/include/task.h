@@ -1,7 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
-#include "bgs.h"
+#include "misaka.h"
 
 int  echo_unpack(struct stream *s, struct peer *peer);
 int  echo_pack(struct stream *s, struct peer *peer);

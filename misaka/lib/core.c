@@ -1,4 +1,4 @@
-#include "bgs.h"
+#include "misaka.h"
 #include "common.h"
 #include "network.h"
 #include "string.h"
@@ -64,7 +64,7 @@ void peer_unregister(struct peer *peer){
 
 //loookup peer in hash table
 void *peer_lookup(struct peer *peer){
-    hash_lookup(misaka_servant.peer_hash, (void *)peer);
+    return hash_lookup(misaka_servant.peer_hash, (void *)peer);
 } 
 
 //just pop out this packet
@@ -832,6 +832,7 @@ int read_io_action(int event, struct peer *peer){
         case IO_PARTIAL: 
             break;
         case IO_ACCEPT:
+            zlog_debug("get accept from peer fd\n", peer->fd);
             break;
         case IO_CLEAN:
             if (s)
@@ -954,6 +955,7 @@ struct stream *  misaka_packet_process(struct stream *s, struct peer *peer)
 int misaka_packet_route(struct stream *s){
     struct peer *peer = NULL;
     struct peer p;
+    void *data;
     struct stream *rs, *ts, *tt;
 
     if(!s)
@@ -969,7 +971,8 @@ int misaka_packet_route(struct stream *s){
     //peer = peer_lookup_drole(misaka_servant.peer_list, s->dst);
     p.drole = s->dst;
     peer = (struct peer *)peer_lookup( (void *)&p);
-        
+    
+    zlog_debug("lookup peer %p\n", data);
     //drop it
     if(!peer){  
         zlog_debug("packet to unknown peer\n");

@@ -9,6 +9,10 @@
 ##DEPEND
  - libev support
 
+##目录结构
+ - debug 调试代码
+ - misaksa 程序本体
+
 #组件清单
  - 调度支持
  - 多线程分发

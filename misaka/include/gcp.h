@@ -1,7 +1,7 @@
 #ifndef __GCP_H_
 #define __GCP_H_
 
-#include "bgs.h"
+#include "misaka.h"
 #include "types.h"
 /* GCP version */
 #define	GCP_VERSION	1
