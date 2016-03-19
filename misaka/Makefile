@@ -5,7 +5,7 @@ CC = gcc
 
 ##CC=powerc-tsl-linux-gunspe-gcc
 
-SRC = core.c sockunion.c stream.c thread.c prefix.c linklist.c network.c vector.c log.c hash.c main.c memtypes.c sigevent.c common.c  \
+SRC = core.c sockunion.c stream.c prefix.c linklist.c network.c vector.c log.c hash.c main.c memtypes.c common.c  \
       udp_link.c ludp_link.c tcp_link.c sdio_link.c echo_task.c kmem.c thpool.c tasklist.c shm.c -lpthread -lev -lm
 
 

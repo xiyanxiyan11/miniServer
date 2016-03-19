@@ -10,7 +10,6 @@
 #include "zebra.h"
 #include "ev.h"
 
-#include "thread.h"
 #include "memory.h"
 #include "stream.h"
 #include "memtypes.h"
@@ -227,20 +226,20 @@ struct date_time{
 int core_init(void);
 int core_run(void);
 void sighandle(int num);
-void bgs_packet_init(void);
-int bgs_start ( struct peer *peer );
-int bgs_stop ( struct peer *peer );
-int bgs_ignore ( struct peer *peer );
-int bgs_connect_success ( struct peer *peer );
-int bgs_connect_fail ( struct peer *peer );
-int bgs_reconnect ( struct peer *peer );
-int bgs_stop_with_error ( struct peer *peer );
-void bgs_timer_set ( struct peer *peer );
+void misaka_packet_init(void);
+int misaka_start ( struct peer *peer );
+int misaka_stop ( struct peer *peer );
+int misaka_ignore ( struct peer *peer );
+int misaka_connect_success ( struct peer *peer );
+int misaka_connect_fail ( struct peer *peer );
+int misaka_reconnect ( struct peer *peer );
+int misaka_stop_with_error ( struct peer *peer );
+void misaka_timer_set ( struct peer *peer );
 struct peer* peer_new(void);
 char *peer_uptime (time_t uptime2, char *buf, size_t len, int type);
-int bgs_packet_route(struct stream *s);
-void bgs_packet_delete(struct stream_fifo* obuf);
-extern int bgs_register_evnet( void (*func)(struct stream *), int type);
+int misaka_packet_route(struct stream *s);
+void misaka_packet_delete(struct stream_fifo* obuf);
+extern int misaka_register_evnet( void (*func)(struct stream *), int type);
 extern struct stream  *stream_dclone(struct stream *s);
 extern struct stream  *stream_clone(struct stream *s);
 extern void stream_free (struct stream *s);
@@ -250,14 +249,14 @@ extern void peer_register(struct peer *peer);
 extern void peer_unregister(struct peer *peer);
 extern void *peer_lookup(struct peer *peer);
 extern void stream_dir_exchange(struct stream *s);
-extern int bgs_packet_thread_route(struct stream *s);
-extern struct stream* bgs_write_packet(struct stream_fifo *obuf);
+extern int misaka_packet_thread_route(struct stream *s);
+extern struct stream* misaka_write_packet(struct stream_fifo *obuf);
 
 //config manger
-extern struct global_config bgs_config;    //local config handle
+extern struct global_config misaka_config;    //local config handle
 
 //handle manger
-extern struct global_servant bgs_servant;  //local servant handle    
+extern struct global_servant misaka_servant;  //local servant handle    
 
 
 #endif /* __MISAKA_H_ */

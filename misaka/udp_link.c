@@ -129,7 +129,7 @@ int udp_write(struct peer *peer){
         
 
         //get first stream;
-  	s = bgs_write_packet (peer->obuf);
+  	s = misaka_write_packet (peer->obuf);
   	if (!s)
     		return 0;	
 	/* udp Nonblocking write */
@@ -158,9 +158,9 @@ int udp_write(struct peer *peer){
 		}
    
       		/*OK we send packet so delete packet. */
-      		bgs_packet_delete (peer->obuf);
+      		misaka_packet_delete (peer->obuf);
 
-    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
+    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = misaka_write_packet (peer->obuf)) != NULL);
          return count;  
 }
 

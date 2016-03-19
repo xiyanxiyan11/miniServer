@@ -8,27 +8,25 @@
 #include "shm.h"
 
 //config manger
-struct global_config bgs_config;    //local config handle
+struct global_config misaka_config;    //local config handle
 
 //handle manger
-struct global_servant bgs_servant;  //local servant handle    
+struct global_servant misaka_servant;  //local servant handle    
 
-int peer_debug_timer(struct thread* t);
 struct stream *stream_clone_one(struct stream *from);
 struct stream * stream_clone(struct stream *from);
 int stream_count(struct stream *s);
 void stream_dir_exchange(struct stream *s);
 void dump_packet(struct stream *s);
-int bgs_start_jitter ( int time );
+int misaka_start_jitter ( int time );
 void reverse_stream(struct stream *s, int size);
 char *peer_uptime (time_t uptime2, char *buf, size_t len,int type);
 int peer_old_time (time_t uptime2, int type);
-time_t bgs_clock (int type);
-void bgs_packet_add(struct stream_fifo* obuf, struct stream* s);
-void bgs_packet_delete(struct stream_fifo *obuf);
-void bgs_uptime_reset ( struct peer *peer );
-int bgs_stop ( struct peer *peer );
-int bgs_reconnect ( struct peer *peer );
+void misaka_packet_add(struct stream_fifo* obuf, struct stream* s);
+void misaka_packet_delete(struct stream_fifo *obuf);
+void misaka_uptime_reset ( struct peer *peer );
+int misaka_stop ( struct peer *peer );
+int misaka_reconnect ( struct peer *peer );
 int peer_delete(struct peer* peer);
 struct peer* peer_new(void);
 struct peer* peer_lookup_su(struct list *list, union sockunion *su);
@@ -37,15 +35,15 @@ struct peer* peer_lookup_drole(struct list *list, int drole);
 struct peer* peer_lookup_role(struct list *list, int role);
 int sockunion_udp_socket (union sockunion *su);
 int sockunion_tcp_socket (union sockunion *su);
-int bgs_start_success ( struct peer *peer );
-int bgs_start(struct peer *peer);
-int bgs_write_proceed(struct stream_fifo *obuf);
-struct stream* bgs_write_packet(struct stream_fifo *obuf);
+int misaka_start_success ( struct peer *peer );
+int misaka_start(struct peer *peer);
+int misaka_write_proceed(struct stream_fifo *obuf);
+struct stream* misaka_write_packet(struct stream_fifo *obuf);
 int read_io_action(int event, struct peer *peer);
-int bgs_packet_route(struct stream *s);
-struct stream * bgs_packet_process(struct stream *s, struct peer *peer);
-void bgs_read(struct ev_loop *loop, struct ev_io *w, int events);
-void bgs_write(struct ev_loop *loop, struct ev_io *handle, int events);
+int misaka_packet_route(struct stream *s);
+struct stream * misaka_packet_process(struct stream *s, struct peer *peer);
+void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
+void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 
 static struct event_handle *events[EVENT_MAX];
 
@@ -56,17 +54,17 @@ void *phash_alloc_func(void *data){
 
 //register peer key val
 void peer_register(struct peer *peer){
-    hash_get(bgs_servant.peer_hash, (void *)peer, phash_alloc_func);
+    hash_get(misaka_servant.peer_hash, (void *)peer, phash_alloc_func);
 }
 
 //unregister peer key val
 void peer_unregister(struct peer *peer){
-    hash_release(bgs_servant.peer_hash, (void *)peer);
+    hash_release(misaka_servant.peer_hash, (void *)peer);
 }
 
 //loookup peer in hash table
 void *peer_lookup(struct peer *peer){
-    hash_lookup(bgs_servant.peer_hash, (void *)peer);
+    hash_lookup(misaka_servant.peer_hash, (void *)peer);
 } 
 
 //just pop out this packet
@@ -228,7 +226,7 @@ void dump_packet(struct stream *s){
 }
 
 /* MISAKA start timer jitter. */
-int bgs_start_jitter ( int time )
+int misaka_start_jitter ( int time )
 {
     return ( ( rand () % ( time + 1 ) ) - ( time / 2 ) );
 }
@@ -270,7 +268,7 @@ char *peer_uptime (time_t uptime2, char *buf, size_t len,int type)
         }
 
   	/* Get current time. */
-  	uptime1 = bgs_clock (type);
+  	uptime1 = clock();
   	uptime1 -= uptime2;
   	tm = gmtime (&uptime1);
 
@@ -295,41 +293,33 @@ char *peer_uptime (time_t uptime2, char *buf, size_t len,int type)
 
 	time_t uptime1;
   	struct tm *tm;
-  	uptime1 = bgs_clock (type);
+  	uptime1 = clock();
   	uptime1 -= uptime2;
   	tm = gmtime (&uptime1);
         return (tm->tm_hour > PEER_OLD_TIME);
 }
 
-//get clock
-time_t bgs_clock (int type)
-{
-	struct timeval tv;
-  	quagga_gettime(type, &tv);
-  	return tv.tv_sec;
-}
-
 //add packet into send fifo
-void bgs_packet_add(struct stream_fifo* obuf, struct stream* s)
+void misaka_packet_add(struct stream_fifo* obuf, struct stream* s)
 {
 	//Add packet to the end of list.
 	stream_fifo_push(obuf, s);
 }
 
 //free first packet from fifo
-void bgs_packet_delete(struct stream_fifo *obuf)
+void misaka_packet_delete(struct stream_fifo *obuf)
 {
 	stream_free(stream_fifo_pop(obuf));
 }
 
 //peer old  timer
-void bgs_uptime_reset ( struct peer *peer )
+void misaka_uptime_reset ( struct peer *peer )
 {
     peer->uptime = time ( NULL );
 }
 
 //stop on peer 
-int bgs_stop ( struct peer *peer )
+int misaka_stop ( struct peer *peer )
 {
 	/* Increment Dropped count. */
     	if ( peer->status == TAT_ESTA)
@@ -337,7 +327,7 @@ int bgs_stop ( struct peer *peer )
 		// set last reset time 
         	peer->resettime = time ( NULL );
         	//Reset uptime. 
-        	bgs_uptime_reset ( peer );
+        	misaka_uptime_reset ( peer );
 		peer->status = TAT_IDLE;
 	}
         
@@ -376,10 +366,10 @@ int bgs_stop ( struct peer *peer )
 }
 
 //udp reconnect or device reconnect 
-int bgs_reconnect ( struct peer *peer )
+int misaka_reconnect ( struct peer *peer )
 {
-    bgs_stop ( peer );
-    bgs_start ( peer );
+    misaka_stop ( peer );
+    misaka_start ( peer );
     return 0;
 }
 
@@ -406,10 +396,10 @@ int peer_delete(struct peer* peer)
 {
 
         //remove this peer from peer_list
-        listnode_delete(bgs_servant.peer_list,peer);
+        listnode_delete(misaka_servant.peer_list,peer);
 
 	//stop peer work
-	bgs_stop(peer);
+	misaka_stop(peer);
 
 	/* Buffer.  */
 	if (peer->ibuf)
@@ -463,7 +453,7 @@ struct peer* peer_new()
 
 	memset(peer, 0, sizeof(struct peer));
 
-	listnode_add(bgs_servant.peer_list, peer);
+	listnode_add(misaka_servant.peer_list, peer);
 
 	/* Set default value. */
 	peer->fd = -1;
@@ -490,7 +480,7 @@ struct peer* peer_new()
 	peer->peer = NULL;
         
 	/*init time*/
-	bgs_uptime_reset(peer);
+	misaka_uptime_reset(peer);
 	
 	/* Last read time set */
 	peer->readtime = time(NULL);
@@ -514,7 +504,7 @@ struct peer* peer_new()
         peer->role = peer->drole = 0;
 
         //register loop handle
-        peer->loop = bgs_servant.loop;
+        peer->loop = misaka_servant.loop;
 
 	return peer;
 }
@@ -588,14 +578,14 @@ struct peer* peer_lookup_role(struct list *list, int role)
 }
 
 //action when connect success
-int bgs_start_success ( struct peer *peer )
+int misaka_start_success ( struct peer *peer )
 {
         zlog_debug("bgs connect peer->fd: %d success\n", peer->fd);
 	//set connect status;
   	peer->status = TAT_ESTA;				        //set establish flag
         
         //update time
-	peer->uptime = bgs_clock (QUAGGA_CLK_MONOTONIC);
+	peer->uptime = clock();
 	
 
         if(set_nonblocking(peer->fd) <0 ){                             //set non block
@@ -609,15 +599,15 @@ int bgs_start_success ( struct peer *peer )
 
         //register read
         if(1 != ev_is_active(peer->t_read)){
-            ev_io_init(peer->t_read, bgs_read, peer->fd, EV_READ);
+            ev_io_init(peer->t_read, misaka_read, peer->fd, EV_READ);
             peer->t_read->data = peer;
     	    ev_io_start(peer->loop, peer->t_read);
     	}
 
     	//register send event if stream in send fifo
-        if(bgs_write_proceed(peer->obuf)){
+        if(misaka_write_proceed(peer->obuf)){
             if(peer->status == TAT_ESTA && 1 != ev_is_active(peer->t_write))
-                ev_io_init(peer->t_write, bgs_write, peer->fd, EV_WRITE);
+                ev_io_init(peer->t_write, misaka_write, peer->fd, EV_WRITE);
                 peer->t_read->data = peer;
                 ev_io_start(peer->loop, peer->t_write);
         }
@@ -626,7 +616,7 @@ int bgs_start_success ( struct peer *peer )
 
 
 //action when connect progress
-int bgs_start_progress ( struct peer *peer )
+int misaka_start_progress ( struct peer *peer )
 {
 
         zlog_debug("bgs connect progress\n");
@@ -635,7 +625,7 @@ int bgs_start_progress ( struct peer *peer )
   	peer->status = TAT_IDLE;				        //set establish flag
         
         //update time
-	peer->uptime = bgs_clock (QUAGGA_CLK_MONOTONIC);
+	peer->uptime = clock();
 	
         if(set_nonblocking(peer->fd) <0 ){                             //set non block
                     if(peer->fd > 0)
@@ -644,7 +634,7 @@ int bgs_start_progress ( struct peer *peer )
         }
         
         if(1 != ev_is_active(peer->t_read)){
-                ev_io_init(peer->t_read, bgs_read, peer->fd, EV_READ);
+                ev_io_init(peer->t_read, misaka_read, peer->fd, EV_READ);
                 peer->t_read->data = peer;
                 ev_io_start(peer->loop, peer->t_read);
         }
@@ -657,13 +647,13 @@ void connect_status_trigger(int status, struct peer *peer){
     	{
         	case connect_success:	
         	        zlog_debug("connect in success\n");
-        	        bgs_start_success(peer);
+        	        misaka_start_success(peer);
         	        if(1 == ev_is_active(peer->t_connect));
         	            ev_periodic_stop(peer->loop, peer->t_connect);
         	        break;
         	case connect_in_progress:	
         	        zlog_debug("connect in progress\n");
-                        bgs_start_progress( peer);
+                        misaka_start_progress( peer);
         	        if(1 == ev_is_active(peer->t_connect));
         	            ev_periodic_stop(peer->loop, peer->t_connect);
                         break;
@@ -675,7 +665,7 @@ void connect_status_trigger(int status, struct peer *peer){
 }
 
 //action when after connect
-void bgs_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int events)
+void misaka_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int events)
 {
 	int status;
 	struct peer *peer;
@@ -700,23 +690,23 @@ void bgs_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int even
 }
 
 //entry to active peer
-int bgs_start(struct peer *peer){
+int misaka_start(struct peer *peer){
         if(peer->quick){                //not connect, just build
-            bgs_start_success(peer);
+            misaka_start_success(peer);
         }else{
             //init timer here
 	    peer->t_connect  = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
 	    if(!peer->t_connect)
 	        return -1;
 	    peer->t_connect->data = peer;
-            ev_periodic_init(peer->t_connect, bgs_start_thread, fmod (ev_now (peer->loop), RECONNECT_INTERVAL), RECONNECT_INTERVAL, 0);
+            ev_periodic_init(peer->t_connect, misaka_start_thread, fmod (ev_now (peer->loop), RECONNECT_INTERVAL), RECONNECT_INTERVAL, 0);
             ev_periodic_start(peer->loop, peer->t_connect);
         }
         return 0;
 }
 
 /* Is there partially written packet or updates we can send right now.  */
-int bgs_write_proceed(struct stream_fifo *obuf)
+int misaka_write_proceed(struct stream_fifo *obuf)
 {
 	if (stream_fifo_head(obuf))
 		return 1;
@@ -724,7 +714,7 @@ int bgs_write_proceed(struct stream_fifo *obuf)
 }
 
 /* get packet from write fifo*/
-struct stream* bgs_write_packet(struct stream_fifo *obuf)
+struct stream* misaka_write_packet(struct stream_fifo *obuf)
 {
 	struct stream* s = NULL;
 	s = stream_fifo_head(obuf);
@@ -736,7 +726,7 @@ struct stream* bgs_write_packet(struct stream_fifo *obuf)
 }
 
 /* Write packet to the peer. */
-void bgs_write(struct ev_loop *loop, struct ev_io *handle, int events)
+void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
 {
 	struct peer *peer;
 	int count;
@@ -744,7 +734,7 @@ void bgs_write(struct ev_loop *loop, struct ev_io *handle, int events)
   	peer = (struct peer *)handle->data;
   	
   	if(!peer){
-  	    zlog_debug("get empty peer from bgs_write\n");
+  	    zlog_debug("get empty peer from misaka_write\n");
   	    return;
   	    
   	}
@@ -769,7 +759,7 @@ void bgs_write(struct ev_loop *loop, struct ev_io *handle, int events)
                     peer_unregister(peer);
 		    peer_delete(peer);
             }else{
-		    bgs_reconnect(peer);
+		    misaka_reconnect(peer);
 	    }
             return;
         }
@@ -777,7 +767,7 @@ void bgs_write(struct ev_loop *loop, struct ev_io *handle, int events)
         peer->scount += count;
 
         //write again if packets in fifo
-	if (bgs_write_proceed (peer->obuf))			
+	if (misaka_write_proceed (peer->obuf))			
     	{
     	    if(1 != ev_is_active(handle)){
     	        ev_io_start(loop, handle);
@@ -806,35 +796,35 @@ int read_io_action(int event, struct peer *peer){
             
             //@TODO redir for hahaha
 #if 1
-            s->dst = bgs_config.role;
+            s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
             //clone this packet, and clean the old packet
             
             //send to it itsself, stolen it
-            if(s->dst == bgs_config.role){
+            if(s->dst == misaka_config.role){
                 //push stream into task list
 #ifdef MISAKA_THREAD_SUPPORT
-                    spinlock_lock(&bgs_servant.task_in->lock);
+                    spinlock_lock(&misaka_servant.task_in->lock);
                         rs = stream_clone_one(s);
                         if(rs){
-                            tasklist_push(bgs_servant.task_in, rs);
+                            tasklist_push(misaka_servant.task_in, rs);
                         }else{
                         
                         }
                         stream_reset(s);
-                    spinlock_unlock(&bgs_servant.task_in->lock);
+                    spinlock_unlock(&misaka_servant.task_in->lock);
 #else
                     rs = stream_clone_one(s);
                     if(rs){
-                        bgs_packet_process(rs, peer);  
+                        misaka_packet_process(rs, peer);  
                     }
                     stream_reset(s);
 #endif
             }else{  //to others, just route it
                     rs = stream_clone_one(s);
                     if(rs){
-                        bgs_packet_route(rs);
+                        misaka_packet_route(rs);
                     }
                     stream_reset(s);
             }
@@ -852,7 +842,7 @@ int read_io_action(int event, struct peer *peer){
         case IO_FULL:
             break;
         case IO_CLOSE:
-            bgs_reconnect(peer);
+            misaka_reconnect(peer);
             break;
         case IO_PASSIVE_CLOSE:
             zlog_debug("peer passive delete peer fd %d\n", peer->fd);
@@ -870,7 +860,7 @@ int read_io_action(int event, struct peer *peer){
  *  @param[in] thread virtual thread handle 
  *
  */
-void bgs_read(struct ev_loop *loop, struct ev_io *handle, int events)
+void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
 {
     int length;
     int ret = 0;
@@ -881,14 +871,14 @@ void bgs_read(struct ev_loop *loop, struct ev_io *handle, int events)
     peer = (struct peer *)handle->data;
 
     if(NULL == peer){
-            zlog_debug("empty peer get from bgs_read\n");
+            zlog_debug("empty peer get from misaka_read\n");
             return;
     }
 
     //zlog_debug("peer %d is read active %d\n", peer->drole, ev_is_active(peer->t_read));
     
     /*reset time*/
-    bgs_uptime_reset(peer);			//up data read time
+    misaka_uptime_reset(peer);			//up data read time
 
     peer->rcount++;
 
@@ -919,7 +909,7 @@ void bgs_read(struct ev_loop *loop, struct ev_io *handle, int events)
             //set status as establish
             peer->status = TAT_ESTA;
             
-            if(bgs_write_proceed(peer->obuf)){
+            if(misaka_write_proceed(peer->obuf)){
                 if(peer->status == TAT_ESTA && 1 != ev_is_active(peer->t_write))
                     ev_io_init(peer->t_write, NULL, peer->fd, EV_WRITE);
                     peer->t_write->data = peer;
@@ -933,7 +923,7 @@ void bgs_read(struct ev_loop *loop, struct ev_io *handle, int events)
 }
 
 //process distribute here;
-struct stream *  bgs_packet_process(struct stream *s, struct peer *peer)
+struct stream *  misaka_packet_process(struct stream *s, struct peer *peer)
 {
     struct stream *curr = NULL;
     struct stream *t = NULL;
@@ -949,7 +939,7 @@ struct stream *  bgs_packet_process(struct stream *s, struct peer *peer)
     if(type <= EVENT_NONE || type >= EVENT_MAX)
             return NULL;
 
-    LIST_LOOP(bgs_servant.event_list, handle, nn)
+    LIST_LOOP(misaka_servant.event_list, handle, nn)
     {
             if(handle->type != type)
                     continue;
@@ -961,7 +951,7 @@ struct stream *  bgs_packet_process(struct stream *s, struct peer *peer)
 }
 
 /*packet where to route to*/
-int bgs_packet_route(struct stream *s){
+int misaka_packet_route(struct stream *s){
     struct peer *peer = NULL;
     struct peer p;
     struct stream *rs, *ts, *tt;
@@ -976,7 +966,7 @@ int bgs_packet_route(struct stream *s){
     }
 
     //lookup route peer
-    //peer = peer_lookup_drole(bgs_servant.peer_list, s->dst);
+    //peer = peer_lookup_drole(misaka_servant.peer_list, s->dst);
     p.drole = s->dst;
     peer = (struct peer *)peer_lookup( (void *)&p);
         
@@ -998,77 +988,77 @@ int bgs_packet_route(struct stream *s){
 
         stream_fifo_push (peer->obuf, tt);
         if(peer->status == TAT_ESTA && 1 != ev_is_active(peer->t_write)){
-                    ev_io_init(peer->t_write, bgs_write, peer->fd, EV_WRITE);
+                    ev_io_init(peer->t_write, misaka_write, peer->fd, EV_WRITE);
                     peer->t_write->data = peer;
                     ev_io_start(peer->loop, peer->t_write);
         }else{
-                //zlog_debug("bgs_write peer %d in running in route!!!\n", peer->drole);
+                //zlog_debug("misaka_write peer %d in running in route!!!\n", peer->drole);
         }
     }
     return 0;
 }
 
-int bgs_packet_thread_route(struct stream *s){
-    spinlock_lock(&bgs_servant.task_out->lock);
-    tasklist_push(bgs_servant.task_out, s);
-    spinlock_unlock(&bgs_servant.task_out->lock);
+int misaka_packet_thread_route(struct stream *s){
+    spinlock_lock(&misaka_servant.task_out->lock);
+    tasklist_push(misaka_servant.task_out, s);
+    spinlock_unlock(&misaka_servant.task_out->lock);
     return 0;
 }
 
 //register task for evnet
-int bgs_register_evnet( void (*func)(struct stream *), int type){
+int misaka_register_evnet( void (*func)(struct stream *), int type){
     struct event_handle *handle = (struct event_handle *)malloc(sizeof(struct event_handle));
     if(type <= EVENT_NONE || type >= EVENT_MAX)
             return -1;
     handle->func = func;
     handle->type = type;
-    bgs_servant.event_list;  
-    listnode_add(bgs_servant.event_list, handle);
+    misaka_servant.event_list;  
+    listnode_add(misaka_servant.event_list, handle);
     events[type] = handle;
     return 0;
 }
 
 //task distribue  handle
-void bgs_task_distribute(struct ev_loop *loop, struct ev_periodic *handle, int events){
+void misaka_task_distribute(struct ev_loop *loop, struct ev_periodic *handle, int events){
     struct stream *s = NULL;
     struct global_servant *servant   = (struct global_servant *)(handle->data);
-    spinlock_lock(&bgs_servant.task_in->lock);
+    spinlock_lock(&misaka_servant.task_in->lock);
     {
     s = tasklist_pop(servant->task_in);
     if(s){
         //maybe push stream into fifo by user
         //start task thread  to load user func
         zlog_debug("distribute one packet to thread\n");
-        if ( thpool_add_work(servant->thpool, (void *(*)(void*))bgs_packet_process, (void* )s) < 0)
+        if ( thpool_add_work(servant->thpool, (void *(*)(void*))misaka_packet_process, (void* )s) < 0)
                 zlog_debug("thread create fail\n");
     }
     }
-    spinlock_unlock(&bgs_servant.task_in->lock);
+    spinlock_unlock(&misaka_servant.task_in->lock);
 }
 
 //task dispatch handle
-void bgs_task_distpatch(struct ev_loop *loop, struct ev_periodic *handle, int events){
+void misaka_task_distpatch(struct ev_loop *loop, struct ev_periodic *handle, int events){
     struct stream *s = NULL;
     struct global_servant *servant   = (struct global_servant *)(handle->data);
-    spinlock_lock(&bgs_servant.task_out->lock);
+    spinlock_lock(&misaka_servant.task_out->lock);
     {
     
     s = tasklist_pop(servant->task_out);
     if(s){
-        bgs_packet_route(s);
+        misaka_packet_route(s);
     }
     
     }
-    spinlock_unlock(&bgs_servant.task_out->lock);
+    spinlock_unlock(&misaka_servant.task_out->lock);
 }
 
 //watch bgs status
-void bgs_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int events){
+void misaka_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int events){
 	struct peer* peer;
 	struct listnode* nn;
 
         zlog_debug("##################################Watch#####################\n");
-	LIST_LOOP(bgs_servant.peer_list, peer, nn)
+	LIST_LOOP(misaka_servant.peer_list, peer, nn)
 	{
 	        dump_peer(peer);
 	        zlog_debug("\n");
@@ -1087,41 +1077,41 @@ int core_init(void)
    	signal(SIGINT,sighandle);
 
 #if 0
-        bgs_servant.shm = shm_new(MISAKA_SHM_KEY, MISAKA_MEM_SIZE);
-        if(!bgs_servant.shm){
+        misaka_servant.shm = shm_new(MISAKA_SHM_KEY, MISAKA_MEM_SIZE);
+        if(!misaka_servant.shm){
             zlog_err("alloc shm manger fail\n");
             return -1;
         }else{
             zlog_debug("alloc shm manager success\n");
         }
 
-   	mem = shm_open(bgs_servant.shm);
+   	mem = shm_open(misaka_servant.shm);
    	if(!mem){
    	    zlog_err("alloc mem for cache fail\n");
    	}else{
    	    zlog_err("alloc mem for cache success\n");
    	}
 
-   	bgs_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
+   	misaka_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
 
-   	bgs_servant.stream_cache = kmem_cache_create(bgs_servant.kmem, "stream", sizeof(struct stream), MISAKA_MAX_STREAM);
-   	if(bgs_servant.stream_cache){
+   	misaka_servant.stream_cache = kmem_cache_create(misaka_servant.kmem, "stream", sizeof(struct stream), MISAKA_MAX_STREAM);
+   	if(misaka_servant.stream_cache){
    	    zlog_err("alloc cache for stream fail\n");
    	    return -1;
    	}else{
    	    zlog_err("alloc cache for stream success\n");
    	}
 
-   	bgs_servant.data_cache   = kmem_cache_create(bgs_servant.kmem, "data",   MISAKA_MAX_PACKET_SIZE,   MISAKA_MAX_DATA);
-   	if(bgs_servant.data_cache){
+   	misaka_servant.data_cache   = kmem_cache_create(misaka_servant.kmem, "data",   MISAKA_MAX_PACKET_SIZE,   MISAKA_MAX_DATA);
+   	if(misaka_servant.data_cache){
    	    zlog_err("alloc cache for data fail\n");
    	    return -1;
    	}else{
    	    zlog_err("alloc cache for data success\n");
    	}
 
-   	bgs_servant.peer_cache   =  kmem_cache_create(bgs_servant.kmem, "peer", sizeof(struct peer),    MISAKA_MAX_PEER);
-   	if(bgs_servant.peer_cache){
+   	misaka_servant.peer_cache   =  kmem_cache_create(misaka_servant.kmem, "peer", sizeof(struct peer),    MISAKA_MAX_PEER);
+   	if(misaka_servant.peer_cache){
    	    zlog_err("alloc cache for peer fail\n");
    	    return -1;
    	}else{
@@ -1129,76 +1119,76 @@ int core_init(void)
    	}
 #endif
 
-   	bgs_servant.loop = ev_default_loop(0);
+   	misaka_servant.loop = ev_default_loop(0);
 
-	if (NULL == bgs_servant.loop)
+	if (NULL == misaka_servant.loop)
 	{
-		zlog_debug("Create bgs_master faild!\r\n");
+		zlog_debug("Create misaka_master faild!\r\n");
 		return -1;
 	}
         
         //init the peer list
-	if( NULL == (bgs_servant.peer_list = list_new())){
+	if( NULL == (misaka_servant.peer_list = list_new())){
 		zlog_debug("Create peer_list failed!\r\n");
 		return -1;
 	}else{
-	    bgs_servant.peer_list->cmp =  (int (*) (void *, void *)) peer_cmp;
+	    misaka_servant.peer_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
 
         //init hash peer
-	bgs_servant.peer_hash = hash_create(peer_key, (int (*)(const void *, const void *))peer_cmp);
+	misaka_servant.peer_hash = hash_create(peer_key, (int (*)(const void *, const void *))peer_cmp);
 
         //init the peer list
-	if( NULL == (bgs_servant.event_list = list_new())){
+	if( NULL == (misaka_servant.event_list = list_new())){
 		zlog_debug("Create event_list failed!\r\n");
 		return -1;
 	}else{
-	    bgs_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
+	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
 
 #ifdef MISAKA_THREAD_SUPPORT
         //init task in list
-	if( NULL == (bgs_servant.task_in = tasklist_new())){
+	if( NULL == (misaka_servant.task_in = tasklist_new())){
 		zlog_debug("Create task_list in failed!\r\n");
 		return -1;
 	}
 
         //init task out list
-	if( NULL == (bgs_servant.task_out = tasklist_new())){
+	if( NULL == (misaka_servant.task_out = tasklist_new())){
 		zlog_debug("Create task_list out failed!\r\n");
 		return -1;
 	}
 
-	bgs_servant.t_distribute  = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
-	if(!bgs_servant.t_distribute)
+	misaka_servant.t_distribute  = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
+	if(!misaka_servant.t_distribute)
 	    return -1;
-	bgs_servant.t_distribute->data = &bgs_servant;
+	misaka_servant.t_distribute->data = &misaka_servant;
 
-        ev_periodic_init(bgs_servant.t_distribute, bgs_task_distribute, fmod (ev_now (bgs_servant.loop), DISTRIBUTE_INTERVAL), DISTRIBUTE_INTERVAL, 0);
-        ev_periodic_start(bgs_servant.loop, bgs_servant.t_distribute);
+        ev_periodic_init(misaka_servant.t_distribute, misaka_task_distribute, fmod (ev_now (misaka_servant.loop), DISTRIBUTE_INTERVAL), DISTRIBUTE_INTERVAL, 0);
+        ev_periodic_start(misaka_servant.loop, misaka_servant.t_distribute);
 
-	bgs_servant.t_distpatch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
-	if(!bgs_servant.t_distpatch)
+	misaka_servant.t_distpatch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
+	if(!misaka_servant.t_distpatch)
 	    return -1;
-	bgs_servant.t_distpatch->data = &bgs_servant;
+	misaka_servant.t_distpatch->data = &misaka_servant;
 
-        ev_periodic_init(bgs_servant.t_distpatch, bgs_task_distpatch, fmod (ev_now (bgs_servant.loop), DISPATCH_INTERVAL), DISTRIBUTE_INTERVAL, 0);
-        ev_periodic_start(bgs_servant.loop, bgs_servant.t_distpatch);
+        ev_periodic_init(misaka_servant.t_distpatch, misaka_task_distpatch, fmod (ev_now (misaka_servant.loop), DISPATCH_INTERVAL), DISTRIBUTE_INTERVAL, 0);
+        ev_periodic_start(misaka_servant.loop, misaka_servant.t_distpatch);
 
 
-	bgs_servant.thpool = thpool_init(MISAKA_THREAD_NUM);
+	misaka_servant.thpool = thpool_init(MISAKA_THREAD_NUM);
 
-	if(!bgs_servant.thpool)
+	if(!misaka_servant.thpool)
 	    return -1;
 #endif
-	bgs_servant.t_watch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
+	misaka_servant.t_watch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
 	
-       // ev_periodic_init(bgs_servant.t_watch, bgs_core_watch, fmod (ev_now (bgs_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
-        //ev_periodic_start(bgs_servant.loop, bgs_servant.t_watch);
+       // ev_periodic_init(misaka_servant.t_watch, misaka_core_watch, fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
+        //ev_periodic_start(misaka_servant.loop, misaka_servant.t_watch);
 	
-	if(!bgs_servant.t_watch)
+	if(!misaka_servant.t_watch)
 	    return -1;
-	bgs_servant.t_watch->data = &bgs_servant;
+	misaka_servant.t_watch->data = &misaka_servant;
   	
   	return 0;
 }
@@ -1207,7 +1197,7 @@ int core_init(void)
 int core_run(){
         zlog_info("proxy start\n");
 	while(1){
-	    ev_loop(bgs_servant.loop, 0);
+	    ev_loop(misaka_servant.loop, 0);
 	}
         zlog_info("proxy stop\n");
         return 0;

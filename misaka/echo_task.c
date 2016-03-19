@@ -32,9 +32,9 @@ void echo_event(struct stream *s)
     //reverse dir
     stream_dir_exchange(s);
 #ifdef BGS_THREAD_SUPPORT
-    bgs_packet_thread_route(s);
+    misaka_packet_thread_route(s);
 #else
-    bgs_packet_route(s);
+    misaka_packet_route(s);
 #endif
 }
 
@@ -52,13 +52,13 @@ void debug_event(struct stream *s)
     s->dst = ROLE_SERVER;
     s->endp += 128;
 #ifdef BGS_THREAD_SUPPORT
-    bgs_packet_thread_route(s);
+    misaka_packet_thread_route(s);
 #else
-    bgs_packet_route(s);
+    misaka_packet_route(s);
 #endif
 }
 
 int echo_register(void){
-    bgs_register_evnet(echo_event, EVENT_ECHO);
+    misaka_register_evnet(echo_event, EVENT_ECHO);
     return 0;
 }

@@ -59,7 +59,7 @@ int sdio_write(struct peer *peer){
       	int writenum;
         
         //get first stream;
-  	s = bgs_write_packet (peer->obuf);
+  	s = misaka_write_packet (peer->obuf);
   	if (!s)
     		return 0;	
     		
@@ -86,8 +86,8 @@ int sdio_write(struct peer *peer){
 		}
    
       		/*OK we send packet so delete packet. */
-      		bgs_packet_delete (peer->obuf);
-    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
+      		misaka_packet_delete (peer->obuf);
+    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = misaka_write_packet (peer->obuf)) != NULL);
          return 0;  
 }
 
@@ -109,6 +109,6 @@ struct peer * sdio_init(const char *str){
 	peer->write = sdio_write;
 	peer->start = sdio_connect;
 
-	//bgs_start(peer);
+	//misaka_start(peer);
         return peer;
 }

@@ -117,7 +117,7 @@ int tcp_accept(struct peer *peer){
             return ret;
         }
         cpeer->quick = 1;               //quick connect
-        bgs_start(cpeer);
+        misaka_start(cpeer);
         return IO_ACCEPT;
 }
 
@@ -131,7 +131,7 @@ int tcp_write(struct peer *peer){
      
         //zlog_debug("tcp write trigger with packet %d\n", peer->obuf->count);
         //get first stream;
-  	s = bgs_write_packet (peer->obuf);
+  	s = misaka_write_packet (peer->obuf);
   	if (!s)
     		return 0;	
     		
@@ -154,11 +154,11 @@ int tcp_write(struct peer *peer){
 		{
 		
 		}else{
-      		    bgs_packet_delete (peer->obuf);
+      		    misaka_packet_delete (peer->obuf);
       		    pcount++;
       		}
 
-    	 }while (count < MISAKA_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
+    	 }while (count < MISAKA_WRITE_PACKET_MAX && (s = misaka_write_packet (peer->obuf)) != NULL);
          return pcount;  
 }
 
@@ -268,6 +268,6 @@ struct peer * tcp_passive_init(union sockunion *su, int fd)
 	peer->start = tcp_passive;
 	peer->mode = MODE_PASSIVE;
 	
-	//bgs_start(peer);
+	//misaka_start(peer);
 	return peer;
 }

@@ -10,7 +10,7 @@ int core_register()
     echo_register();   
 
     SET_DEBUG(DEBUG_DEBUG);
-    bgs_config.role = ROLE_SERVER;
+    misaka_config.role = ROLE_SERVER;
 #if 0
     //register udp 
     peer  =  udp_init("192.168.97.98", 8000, 11112);
@@ -24,7 +24,7 @@ int core_register()
     peer->role = ROLE_SERVER;
     peer->drole = ROLE_UDP;
     peer_register(peer);
-    bgs_start(peer);
+    misaka_start(peer);
 
 #endif
 
@@ -36,7 +36,7 @@ int core_register()
     peer->role = ROLE_SERVER;
     peer->drole = ROLE_TCP;
     peer_register(peer);
-    bgs_start(peer);
+    misaka_start(peer);
 
 #endif
 
@@ -45,7 +45,7 @@ int core_register()
     peer->role = ROLE_TCP;
     peer->drole = ROLE_SERVER;
     peer_register(peer);
-    bgs_start(peer);
+    misaka_start(peer);
 #endif
 
     return 0;

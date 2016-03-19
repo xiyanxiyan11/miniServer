@@ -106,7 +106,7 @@ int ludp_write(struct peer *peer){
   	char buf[MISAKA_HEADER_SIZE] = {0};          //empty buffer
         
         //get first stream;
-  	s = bgs_write_packet (peer->obuf);
+  	s = misaka_write_packet (peer->obuf);
   	if (!s)
     		return 0;	
     		
@@ -134,8 +134,8 @@ int ludp_write(struct peer *peer){
 		}
    
       		/*OK we send packet so delete packet. */
-      		bgs_packet_delete (peer->obuf);
-    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = bgs_write_packet (peer->obuf)) != NULL);
+      		misaka_packet_delete (peer->obuf);
+    	 }while (++count < MISAKA_WRITE_PACKET_MAX && (s = misaka_write_packet (peer->obuf)) != NULL);
          return 0;  
 }
 
@@ -157,7 +157,7 @@ struct peer * ludp_init(const char *srcip, const char *dstip)
 	peer->write = ludp_write;
 	peer->start = ludp_connect;
 
-	//bgs_start(peer);
+	//misaka_start(peer);
 	return peer;
 }
 
