@@ -5,7 +5,7 @@ AC_PREREQ([2.69])
 AC_INIT([misaka], [0.1], [www.lancelot.top])
 AM_INIT_AUTOMAKE
 AC_PROG_RANLIB
-AC_CONFIG_SRCDIR([src/main.c])
+AC_CONFIG_SRCDIR([include/misaka.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
@@ -34,5 +34,5 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([alarm dup2 gettimeofday inet_ntoa memset setenv socket strchr strerror strrchr strstr strtol])
 
-AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile task/Makefile link/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile task/Makefile src/echo/Makefile link/Makefile])
 AC_OUTPUT

@@ -585,7 +585,7 @@ PACKAGE_STRING='misaka 0.1'
 PACKAGE_BUGREPORT='www.lancelot.top'
 PACKAGE_URL=''
 
-ac_unique_file="src/main.c"
+ac_unique_file="include/misaka.h"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -4912,7 +4912,7 @@ fi
 done
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile lib/Makefile task/Makefile link/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile lib/Makefile task/Makefile src/echo/Makefile link/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5645,6 +5645,7 @@ do
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
     "task/Makefile") CONFIG_FILES="$CONFIG_FILES task/Makefile" ;;
+    "src/echo/Makefile") CONFIG_FILES="$CONFIG_FILES src/echo/Makefile" ;;
     "link/Makefile") CONFIG_FILES="$CONFIG_FILES link/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

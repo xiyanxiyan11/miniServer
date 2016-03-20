@@ -832,7 +832,6 @@ int read_io_action(int event, struct peer *peer){
         case IO_PARTIAL: 
             break;
         case IO_ACCEPT:
-            zlog_debug("get accept from peer fd\n", peer->fd);
             break;
         case IO_CLEAN:
             if (s)
