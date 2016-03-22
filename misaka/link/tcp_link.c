@@ -24,7 +24,6 @@ int tcp_connect(struct peer* peer){
 //accept progress
 int tcp_listen(struct peer *peer){
 	int ret = 0;
-	//open socket udp socket
 	if(peer->fd < 0)
 	    peer->fd = socket(AF_INET, SOCK_STREAM, 0);
 	
@@ -48,7 +47,6 @@ int tcp_listen(struct peer *peer){
 	//set address and port re use
 	sockopt_reuseaddr(peer->fd);
 	sockopt_reuseport(peer->fd);
-        
         return connect_success;
 }
 

@@ -262,17 +262,11 @@ int sys_get_eth_ifname(char *ifname, int nsize)
 	if (fp == NULL)
 		return -1;
 
-	// 读取文件信息头
-	fgets(buf, sizeof(buf), fp);
-	fgets(buf, sizeof(buf), fp);
-
-	// 读取设备信息行
 	while (fgets(buf, sizeof(buf), fp))
 	{
 		if (buf[0] == '\0' || buf[1] == '\0')
 			continue;
 
-		// 解析网络设备接口名
 		if (get_ifname(ifname, nsize, buf) != NULL)
 		{
 			if (!strncmp(ifname, "eth", 3))
@@ -282,9 +276,7 @@ int sys_get_eth_ifname(char *ifname, int nsize)
 			}
 		}
 	}
-
 	fclose(fp);
-
 	return ret;
 }
 
@@ -298,17 +290,10 @@ int sys_get_wlan_ifname(char *ifname, int nsize)
 	if (fp == NULL)
 		return -1;
 
-	// 读取文件信息头
-	fgets(buf, sizeof(buf), fp);
-	fgets(buf, sizeof(buf), fp);
-
-	// 读取设备信息行
 	while (fgets(buf, sizeof(buf), fp))
 	{
 		if (buf[0] == '\0' || buf[1] == '\0')
 			continue;
-
-		// 解析网络设备接口名
 		if (get_ifname(ifname, nsize, buf) != NULL)
 		{
 			if (!strncmp(ifname, "wlan", 4))
@@ -377,7 +362,6 @@ int file_to_buf(char *path, char *buf, int len)
 	memset(buf, 0, len);
 
 	if ((fp = fopen(path, "r"))) {
-		fgets(buf, len, fp);
 		fclose(fp);
 		return 1;
 	}
@@ -401,26 +385,28 @@ int get_ppp_pid(char *file)
 }
 
 
-char *find_name_by_proc(int pid)
+char *find_name_by_proc(char *out, int pid)
 {
 	FILE *fp;
 	char line[254];
 	char filename[80];
 	static char name[80];
 
+	if(!out)
+	    return NULL;
+
 	snprintf(filename, sizeof(filename), "/proc/%d/status", pid);
 
 	if ((fp = fopen(filename, "r"))) {
-		fgets(line, sizeof(line), fp);
-		/*
-		 * Buffer should contain a string like "Name: binary_name" 
-		 */
-		sscanf(line, "%*s %s", name);
+		if(fgets(line, sizeof(line), fp)){
+		    sscanf(out, "%*s %s", line);
+                }else{
+                    out = NULL;
+                }
 		fclose(fp);
-		return name;
+		return out;
 	}
-
-	return "";
+	return NULL;
 }
 
 int check_wan_link(int num)

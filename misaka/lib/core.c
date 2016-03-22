@@ -587,7 +587,6 @@ int misaka_start_success ( struct peer *peer )
         //update time
 	peer->uptime = clock();
 	
-
         if(set_nonblocking(peer->fd) <0 ){                             //set non block
             zlog_debug("set nonblock fail\n");
                     if(peer->fd > 0){
@@ -596,7 +595,6 @@ int misaka_start_success ( struct peer *peer )
                     peer->fd = 0;
                     
         }
-
         //register read
         if(1 != ev_is_active(peer->t_read)){
             ev_io_init(peer->t_read, misaka_read, peer->fd, EV_READ);
@@ -611,6 +609,7 @@ int misaka_start_success ( struct peer *peer )
                 peer->t_read->data = peer;
                 ev_io_start(peer->loop, peer->t_write);
         }
+
     	return 0;
 }
 
@@ -720,7 +719,7 @@ struct stream* misaka_write_packet(struct stream_fifo *obuf)
 	s = stream_fifo_head(obuf);
 	if (s)
 	{
-		return s;
+	    return s;
 	}
 	return NULL;
 }
@@ -967,7 +966,6 @@ int misaka_packet_route(struct stream *s){
     }
 
     //lookup route peer
-    //peer = peer_lookup_drole(misaka_servant.peer_list, s->dst);
     p.drole = s->dst;
     peer = (struct peer *)peer_lookup( (void *)&p);
     
