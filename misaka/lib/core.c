@@ -1094,7 +1094,8 @@ int core_init(void)
 
    	misaka_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
 
-   	misaka_servant.stream_cache = kmem_cache_create(misaka_servant.kmem, "stream", sizeof(struct stream), MISAKA_MAX_STREAM);
+   	misaka_servant.stream_cache = kmem_cache_create(misaka_servant.kmem,\
+   	        "stream", sizeof(struct stream), MISAKA_MAX_STREAM);
    	if(misaka_servant.stream_cache){
    	    zlog_err("alloc cache for stream fail\n");
    	    return -1;
@@ -1102,7 +1103,8 @@ int core_init(void)
    	    zlog_err("alloc cache for stream success\n");
    	}
 
-   	misaka_servant.data_cache   = kmem_cache_create(misaka_servant.kmem, "data",   MISAKA_MAX_PACKET_SIZE,   MISAKA_MAX_DATA);
+   	misaka_servant.data_cache   = kmem_cache_create(misaka_servant.kmem, \
+   	        "data",   MISAKA_MAX_PACKET_SIZE,   MISAKA_MAX_DATA);
    	if(misaka_servant.data_cache){
    	    zlog_err("alloc cache for data fail\n");
    	    return -1;
@@ -1110,7 +1112,7 @@ int core_init(void)
    	    zlog_err("alloc cache for data success\n");
    	}
 
-   	misaka_servant.peer_cache   =  kmem_cache_create(misaka_servant.kmem, "peer", sizeof(struct peer),    MISAKA_MAX_PEER);
+   	misaka_servant.peer_cache   =  kmem_cache_create(misaka_servant.kmem, \"peer", sizeof(struct peer),    MISAKA_MAX_PEER);
    	if(misaka_servant.peer_cache){
    	    zlog_err("alloc cache for peer fail\n");
    	    return -1;
