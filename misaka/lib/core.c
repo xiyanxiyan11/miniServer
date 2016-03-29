@@ -1089,6 +1089,7 @@ int core_init(void)
    	    zlog_err("alloc mem for cache fail\n");
    	}else{
    	    zlog_err("alloc mem for cache success\n");
+   	    return -1;
    	}
 
    	misaka_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
@@ -1175,7 +1176,6 @@ int core_init(void)
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_distpatch);
 
 
-	misaka_servant.thpool = thpool_init(MISAKA_THREAD_NUM);
 
 	if(!misaka_servant.thpool)
 	    return -1;
