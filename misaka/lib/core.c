@@ -1007,6 +1007,10 @@ int misaka_packet_thread_route(struct stream *s){
 //register task for evnet
 int misaka_register_evnet( void (*func)(struct stream *), int type){
     struct event_handle *handle = (struct event_handle *)malloc(sizeof(struct event_handle));
+    if(NULL==handle){
+        zlog_debug("alloc handle for callback fail\n");
+        return -1;
+    }
     if(type <= EVENT_NONE || type >= EVENT_MAX)
             return -1;
     handle->func = func;
