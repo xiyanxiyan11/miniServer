@@ -1079,7 +1079,7 @@ int core_init(void)
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
 
-#if 1
+#if 0
         misaka_servant.shm = shm_new(MISAKA_SHM_KEY, MISAKA_MEM_SIZE);
         if(!misaka_servant.shm){
             zlog_err("alloc shm manger fail\n");
@@ -1091,9 +1091,9 @@ int core_init(void)
    	mem = shm_open(misaka_servant.shm);
    	if(!mem){
    	    zlog_err("alloc mem for cache fail\n");
+   	    return -1;
    	}else{
    	    zlog_err("alloc mem for cache success\n");
-   	    return -1;
    	}
 
    	misaka_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
