@@ -1079,7 +1079,7 @@ int core_init(void)
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
 
-#if 0
+#if 1
         misaka_servant.shm = shm_new(MISAKA_SHM_KEY, MISAKA_MEM_SIZE);
         if(!misaka_servant.shm){
             zlog_err("alloc shm manger fail\n");
@@ -1116,7 +1116,7 @@ int core_init(void)
    	    zlog_err("alloc cache for data success\n");
    	}
 
-   	misaka_servant.peer_cache   =  kmem_cache_create(misaka_servant.kmem, \"peer", sizeof(struct peer),    MISAKA_MAX_PEER);
+   	misaka_servant.peer_cache   =  kmem_cache_create(misaka_servant.kmem, "peer", sizeof(struct peer),    MISAKA_MAX_PEER);
    	if(misaka_servant.peer_cache){
    	    zlog_err("alloc cache for peer fail\n");
    	    return -1;
