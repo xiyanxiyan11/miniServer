@@ -1,6 +1,7 @@
 #include "misaka.h"
 #include "common.h"
 
+//sdio connect
 int sdio_connect(struct peer *peer){
 	peer->fd = open(peer->path, O_RDWR);
         if(peer->fd < 0)

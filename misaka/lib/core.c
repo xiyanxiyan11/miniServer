@@ -114,6 +114,10 @@ void stream_color_one(struct stream *to, struct stream *from){
 //clone one not in deep
 struct stream * stream_clone_one(struct stream *from){
         struct stream *to = stream_new(MISAKA_MAX_PACKET_SIZE);
+        if(!to){
+            zlog_debug("alloc stream fail");
+            return NULL;
+        }
         stream_color_one(to, from);
         stream_put(to, STREAM_PNT(from), stream_get_endp(from) - stream_get_getp(from));
         return to;
@@ -166,6 +170,11 @@ void sighandle(int num){
         switch(num){
             case SIGINT:
             case SIGHUP:
+            case SIGKILL:
+                    if(misaka_servant.shm){
+                        shm_delete(misaka_servant.shm);
+                        misaka_servant.shm = NULL;
+                    }
                     exit(0);
                 break;
             case SIGPIPE:
@@ -289,8 +298,6 @@ char *peer_uptime (time_t uptime2, char *buf, size_t len,int type)
 //cal peer old time
  int peer_old_time (time_t uptime2, int type)
 {
-        //return 1;
-
 	time_t uptime1;
   	struct tm *tm;
   	uptime1 = clock();
@@ -453,19 +460,30 @@ struct peer* peer_new()
 
 	memset(peer, 0, sizeof(struct peer));
 
-	listnode_add(misaka_servant.peer_list, peer);
-
 	/* Set default value. */
 	peer->fd = -1;
 	peer->v_connect = MISAKA_DEFAULT_CONNECT_RETRY;
 
 	peer->status = TAT_IDLE;
 
-	/* Create buffers.  */
+	/* Create read buffer.  */
 	peer->ibuf = stream_new(MISAKA_MAX_PACKET_SIZE);
+	if(NULL == peer->ibuf){
+            zlog_debug("alloc ibuf fail\n");
+	    XFREE(MTYPE_MISAKA_PEER, peer);
+	    return NULL;
+        }
+
 	peer->ibuf->rlen = MISAKA_MAX_PACKET_SIZE;
 	peer->packet_size = MISAKA_MAX_PACKET_SIZE;
+
 	peer->obuf = stream_fifo_new();
+	if(NULL == peer->obuf){
+            zlog_debug("alloc obuf fail\n");
+	    stream_free(peer->ibuf);
+	    XFREE(MTYPE_MISAKA_PEER, peer);
+	    return NULL;
+	}
 
         peer->read = NULL;
         peer->write = NULL;
@@ -498,7 +516,6 @@ struct peer* peer_new()
 	    return NULL;
 	peer->t_write->data = peer;
 	
-    
         peer->rcount = 0;
         peer->scount = 0;
         peer->role = peer->drole = 0;
@@ -506,6 +523,7 @@ struct peer* peer_new()
         //register loop handle
         peer->loop = misaka_servant.loop;
 
+	listnode_add(misaka_servant.peer_list, peer);
 	return peer;
 }
 
@@ -532,7 +550,7 @@ struct peer* peer_lookup_dsu(struct list *list, union sockunion *dsu)
 	struct peer* peer;
 	struct listnode* nn;
 
-	if(list == NULL)
+	if(NULL == list)
 		return NULL;
 	
 	LIST_LOOP(list, peer, nn)
@@ -550,7 +568,7 @@ struct peer* peer_lookup_drole(struct list *list, int drole)
 	struct listnode* nn;
 
 	if(list == NULL)
-		return NULL;
+	    return NULL;
 	
 	LIST_LOOP(list, peer, nn)
 	{
@@ -567,7 +585,7 @@ struct peer* peer_lookup_role(struct list *list, int role)
 	struct listnode* nn;
 
 	if(list == NULL)
-		return NULL;
+	    return NULL;
 	
 	LIST_LOOP(list, peer, nn)
 	{
@@ -870,8 +888,8 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
     peer = (struct peer *)handle->data;
 
     if(NULL == peer){
-            zlog_debug("empty peer get from misaka_read\n");
-            return;
+        zlog_debug("empty peer get from misaka_read\n");
+        return;
     }
 
     //zlog_debug("peer %d is read active %d\n", peer->drole, ev_is_active(peer->t_read));
@@ -883,14 +901,12 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
 
     if (peer->fd < 0)
     {
-            zlog_debug("invalid peer can't read fd %d\n", peer->fd);
-            return;
+        zlog_debug("invalid peer can't read fd %d\n", peer->fd);
+        return;
     }
     
     //real read, 
     ret = peer->read(peer);
-
-    //zlog_debug("io %d get\n",ret);
 
     //check packet by unpack
     if(ret == IO_CHECK){
@@ -917,6 +933,7 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
         }
 
     }
+
     read_io_action(ret, peer);
     return;
 }
@@ -1015,9 +1032,8 @@ int misaka_register_evnet( void (*func)(struct stream *), int type){
             return -1;
     handle->func = func;
     handle->type = type;
-    misaka_servant.event_list;  
     listnode_add(misaka_servant.event_list, handle);
-    events[type] = handle;
+    //events[type] = handle;
     return 0;
 }
 
@@ -1073,13 +1089,12 @@ int core_init(void)
 {
         int i;
         void *mem;
-        INIT_DEBUG();
-    	
     	//ignore pipe
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
 
-#if 0
+#ifdef MISAKA_CACHE_SUPPORT
+//create and open shm 
         misaka_servant.shm = shm_new(MISAKA_SHM_KEY, MISAKA_MEM_SIZE);
         if(!misaka_servant.shm){
             zlog_err("alloc shm manger fail\n");
@@ -1089,35 +1104,54 @@ int core_init(void)
         }
 
    	mem = shm_open(misaka_servant.shm);
-   	if(!mem){
+   	if(NULL == mem){
    	    zlog_err("alloc mem for cache fail\n");
    	    return -1;
    	}else{
-   	    zlog_err("alloc mem for cache success\n");
+   	    zlog_debug("alloc mem for cache success\n");
    	}
 
    	misaka_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
 
+        //cache for stream
    	misaka_servant.stream_cache = kmem_cache_create(misaka_servant.kmem,\
    	        "stream", sizeof(struct stream), MISAKA_MAX_STREAM);
-   	if(misaka_servant.stream_cache){
+   	
+   	if(NULL == misaka_servant.stream_cache){
    	    zlog_err("alloc cache for stream fail\n");
    	    return -1;
    	}else{
-   	    zlog_err("alloc cache for stream success\n");
+   	    zlog_debug("alloc cache for stream success\n");
    	}
 
+        //cache for data
    	misaka_servant.data_cache   = kmem_cache_create(misaka_servant.kmem, \
    	        "data",   MISAKA_MAX_PACKET_SIZE,   MISAKA_MAX_DATA);
-   	if(misaka_servant.data_cache){
+   	
+   	if(NULL == misaka_servant.data_cache){
    	    zlog_err("alloc cache for data fail\n");
    	    return -1;
    	}else{
-   	    zlog_err("alloc cache for data success\n");
+   	    zlog_debug("alloc cache for data success\n");
    	}
 
-   	misaka_servant.peer_cache   =  kmem_cache_create(misaka_servant.kmem, "peer", sizeof(struct peer),    MISAKA_MAX_PEER);
-   	if(misaka_servant.peer_cache){
+
+        //cache for fifo
+   	misaka_servant.fifo_cache = kmem_cache_create(misaka_servant.kmem,\
+   	        "fifo", sizeof(struct stream_fifo), MISAKA_MAX_FIFO);
+   	
+   	if(NULL == misaka_servant.fifo_cache){
+   	    zlog_err("alloc cache for fifo fail\n");
+   	    return -1;
+   	}else{
+   	    zlog_debug("alloc cache for fifo success\n");
+   	}
+
+        //cache for peer
+   	misaka_servant.peer_cache = kmem_cache_create(misaka_servant.kmem, "peer", sizeof(struct peer),\
+   	        MISAKA_MAX_PEER);
+
+   	if(!misaka_servant.peer_cache){
    	    zlog_err("alloc cache for peer fail\n");
    	    return -1;
    	}else{
@@ -1144,13 +1178,16 @@ int core_init(void)
         //init hash peer
 	misaka_servant.peer_hash = hash_create(peer_key, (int (*)(const void *, const void *))peer_cmp);
 
-        //init the peer list
-	if( NULL == (misaka_servant.event_list = list_new())){
+	misaka_servant.event_list = list_new();
+        
+        //init the event list
+	if( NULL == misaka_servant.event_list){
 		zlog_debug("Create event_list failed!\r\n");
 		return -1;
 	}else{
 	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
+
 
 #ifdef MISAKA_THREAD_SUPPORT
         //init task in list

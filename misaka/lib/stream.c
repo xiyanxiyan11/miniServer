@@ -107,13 +107,12 @@ stream_new (size_t size)
     return s;
 
   
-  if ( (s->data = XMALLOC(0, size)) == NULL)
+  if ( (s->data = XMALLOC(MTYPE_MISAKA_DATA, size)) == NULL)
   {
 
         XFREE (MTYPE_STREAM, s);
         return NULL;
   }
-
 
   s->getp = s->endp = 0;
   s->type = 0;
@@ -130,7 +129,7 @@ stream_free (struct stream *s)
   if (!s)
     return;
   
-  XFREE (MTYPE_STREAM_DATA, s->data);
+  XFREE (MTYPE_MISAKA_DATA, s->data);
   XFREE (MTYPE_STREAM, s);
 }
 

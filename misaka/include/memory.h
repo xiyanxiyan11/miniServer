@@ -33,17 +33,23 @@ struct mlist {
   const char *name;
 };
  
+#include "misaka.h"
 #include "memtypes.h"
 
 extern struct mlist mlists[];
 
+void *misakamalloc(int mtype, int size);
+void *misakacalloc(int mtype, int size);
+void *misakarecalloc(int mtype, void *ptr, int size);
+void misakafree(int mytype, void *ptr);
 
-#define XMALLOC(mtype, size)       malloc (size)
-#define XCALLOC(mtype, size)       calloc ((1), (size))
-#define XREALLOC(mtype, ptr, size) realloc ((ptr), (size))
+
+#define XMALLOC(mtype, size)       misakamalloc(mtype, size)
+#define XCALLOC(mtype, size)       misakacalloc(mtype, size)
+#define XREALLOC(mtype, ptr, size) misakarealloc(mtype, (ptr), (size))
 #define XFREE(mtype, ptr)          do { \
-                                     free (ptr); \
-                                     ptr = NULL; \
+                                        misakafree (mtype, ptr); \
+                                        ptr = NULL; \
                                      } \
                                    while (0)
 

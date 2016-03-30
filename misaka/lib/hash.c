@@ -32,8 +32,7 @@ hash_create_size (unsigned int size, unsigned int (*hash_key) (void *),
   struct hash *hash;
 
   hash = XMALLOC (MTYPE_HASH, sizeof (struct hash));
-  hash->index = XCALLOC (MTYPE_HASH_INDEX,
-			 sizeof (struct hash_backet *) * size);
+  hash->index = XCALLOC (MTYPE_HASH_INDEX, sizeof (struct hash_backet *) * size);
   hash->size = size;
   hash->hash_key = hash_key;
   hash->hash_cmp = hash_cmp;
@@ -75,7 +74,6 @@ hash_get (struct hash *hash, void *data, void * (*alloc_func) (void *))
 
   for (backet = hash->index[index]; backet != NULL; backet = backet->next) 
     if (backet->key == key && (*hash->hash_cmp) (backet->data, data)){
-        printf("packet find %p\n", backet->data);
         return backet->data;
     }
 

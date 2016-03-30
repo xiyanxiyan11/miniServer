@@ -1,7 +1,7 @@
 #include "misaka.h"
 #include "common.h"
 
-//create area udp socket 
+//create ludp socket 
 struct peer* peer_ludp_create(const char *spath, const char *dpath)
 {
         int ret;
@@ -28,7 +28,7 @@ struct peer* peer_ludp_create(const char *spath, const char *dpath)
 }
 
 
-//open the udp
+//open the ludp
 int ludp_connect(struct peer* peer)
 {
         int ret, en;
@@ -139,7 +139,7 @@ int ludp_write(struct peer *peer){
          return 0;  
 }
 
-/* udp server init */
+/* ludp server init */
 struct peer * ludp_init(const char *srcip, const char *dstip)
 {
 	struct peer* peer = NULL;

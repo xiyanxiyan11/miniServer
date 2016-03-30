@@ -105,6 +105,11 @@ int tcp_accept(struct peer *peer){
     
         zlog_debug("accept tcp fd %d \n", fd);
         cpeer = tcp_passive_init(&su, fd);
+        if(NULL == cpeer){
+            zlog_debug("alloc  peer fail from cache\n");
+            close(fd);
+            return IO_ACCEPT;
+        }
         //trance pack and unpack to the passive peer
         cpeer->pack = peer->pack;
         cpeer->unpack = peer->unpack;
@@ -134,11 +139,9 @@ int tcp_write(struct peer *peer){
   	if (!s)
     		return 0;	
     		
-	/* udp Nonblocking write */
   	do
         {
 
-     //         zlog_debug("write:%s\n", STREAM_PNT(s));
       		/* Number of bytes to be sent.  */
                 writenum = stream_get_endp (s) - stream_get_getp (s);
       		num = write (peer->fd, STREAM_PNT (s), writenum);

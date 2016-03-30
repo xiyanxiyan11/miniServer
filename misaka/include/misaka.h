@@ -21,39 +21,42 @@
 #include "kmem.h"
 #include "gcp.h"
 
-#define	MISAKA_UPTIME_LEN	                   25
-#define MISAKA_MAX_QUEUE_PACKET               12
-#define	MISAKA_WRITE_PACKET_MAX	           30
+#define	MISAKA_UPTIME_LEN	               25
+#define MISAKA_MAX_QUEUE_PACKET                12
+#define	MISAKA_WRITE_PACKET_MAX	               30
 
-#define MISAKA_MEM_SIZE                        (1024)
+#define MISAKA_MEM_SIZE                        (1024*1024 * 500)
 #define MISAKA_SHM_KEY                         1234
 #define MISAKA_MEM_ALIGN                       8
-#define MISAKA_MAX_PEER                        (20)
-#define MISAKA_MAX_STREAM                      (80)
+#define MISAKA_MAX_PEER                        (10000)
+#define MISAKA_MAX_STREAM                      (10000*6)
+#define MISAKA_MAX_FIFO                        (10000)
 #define MISAKA_MAX_DATA                        (MISAKA_MAX_STREAM)
 
-
-
+//support thread
 #define MISAKA_THREAD_NUM                        1
 //#define MISAKA_THREAD_SUPPORT                  1
 
+//support data cache
+//#define MISAKA_CACHE_SUPPORT                    1
 
-#define MISAKA_INIT_START_TIMER  			5
+
+#define MISAKA_INIT_START_TIMER  		5
 #define MISAKA_DEFAULT_HOLDTIME               	180
 #define MISAKA_DEFAULT_KEEPALIVE              	60
 #define MISAKA_DEFAULT_CONNECT_RETRY  	        30
-#define MISAKA_DEFAULT_SCAN_TIMER		        15	    
-#define MISAKA_PATH_SIZE				128
+#define MISAKA_DEFAULT_SCAN_TIMER		15	    
+#define MISAKA_PATH_SIZE			128
 
 /* link status */
-enum BGP_TAT{
+enum MISAKA_TAT{
 	   TAT_IDLE,  			        //idle                                                                   
 	   TAT_ESTA,                            //established              
 	   TAT_MAX,   
 };
 
 /*connect mode*/
-enum BGP_MODE{
+enum MISAKA_MODE{
            MODE_NONE = 0,
 	   MODE_CONNECT,                        //connect                                                             
 	   MODE_LISTEN,                         //listen                     
@@ -61,8 +64,8 @@ enum BGP_MODE{
            MODE_MAX,
 };
 
-                                                /* BGP finite state machine status.  */
-enum BGP_TYPE{
+                                                /* MISAKA finite state machine status.  */
+enum MISAKA_TYPE{
            TYPE_NONE = 0,
 	   TYPE_TCP ,                    
 	   TYPE_UDP,
@@ -202,6 +205,7 @@ struct global_servant{
     struct kmem_cache *peer_cache;           /*manager all peer cache*/ 
     struct kmem_cache *stream_cache;         /*manager all stream cache*/
     struct kmem_cache *data_cache;           /*manager all data in cache*/
+    struct kmem_cache *fifo_cache;           /*manager all fifo in cache*/
 };
 
 struct event_handle{
