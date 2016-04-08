@@ -15,7 +15,6 @@ int echo_unpack(struct stream *s, struct peer *peer)
         peer_register(peer);
     }else{
     
-        //send back, so do nothing
     }
     return IO_PACKET;
 }
@@ -31,26 +30,6 @@ void echo_event(struct stream *s)
 {
     //reverse dir
     stream_dir_exchange(s);
-#ifdef BGS_THREAD_SUPPORT
-    misaka_packet_thread_route(s);
-#else
-    misaka_packet_route(s);
-#endif
-}
-
-//echo event, send this  packet back
-void debug_event(struct stream *s)
-{
-    static int count = 0;
-    if(count)
-        return;
-
-    count++;
-    zlog_debug("route debug packet\n");
-    //reverse dir
-    s = stream_new(200);
-    s->dst = ROLE_SERVER;
-    s->endp += 128;
 #ifdef BGS_THREAD_SUPPORT
     misaka_packet_thread_route(s);
 #else

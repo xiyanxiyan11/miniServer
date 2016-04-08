@@ -1,34 +1,7 @@
-/* Zebra common header.
-   Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Kunihiro Ishiguro
-
-This file is part of GNU Zebra.
-
-GNU Zebra is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2, or (at your option) any
-later version.
-
-GNU Zebra is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with GNU Zebra; see the file COPYING.  If not, write to the Free
-Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-02111-1307, USA.  */
-
 #ifndef _ZEBRA_H
 #define _ZEBRA_H
 
 #define assert(x) (x)
-
-//#include "config.h"
-
-
-#define ZEBRA_SERV_PATH 1
-#define CONFIGFILE_MASK 1
-#define LOGFILE_MASK 1
 
 #include <unistd.h>
 #include <stdio.h>
@@ -115,7 +88,6 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #endif /* !va_copy */
 #endif /* !C99 */
 
-/* added by fanky 2014 --- begin */
 typedef signed char  s8;
 typedef signed short s16;
 typedef signed int   s32;
@@ -130,10 +102,7 @@ typedef unsigned long  u64;
 typedef signed long long s64;
 typedef unsigned long long u64;
 #endif
-/* added by fanky 2014 --- end */
 
-
-/* network include group */
 
 #include <sys/socket.h>
 
@@ -190,11 +159,6 @@ typedef unsigned long long u64;
 #else /* HAVE_BROKEN_CMSG_FIRSTHDR */
 #define ZCMSG_FIRSTHDR(M) CMSG_FIRSTHDR(M)
 #endif /* HAVE_BROKEN_CMSG_FIRSTHDR */
-
-/* 
- * RFC 3542 defines several macros for using struct cmsghdr.
- * Here, we define those that are not present
- */
 
 /*
  * Internal defines, for use only in this file.
@@ -296,104 +260,9 @@ struct in_pktinfo
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-/* default zebra TCP port for zclient */
-#define ZEBRA_PORT			2600
-
-/* Zebra message types. */
-#define ZEBRA_INTERFACE_ADD                1
-#define ZEBRA_INTERFACE_DELETE             2
-#define ZEBRA_INTERFACE_ADDRESS_ADD        3
-#define ZEBRA_INTERFACE_ADDRESS_DELETE     4
-#define ZEBRA_INTERFACE_UP                 5
-#define ZEBRA_INTERFACE_DOWN               6
-#define ZEBRA_IPV4_ROUTE_ADD               7
-#define ZEBRA_IPV4_ROUTE_DELETE            8
-#define ZEBRA_IPV6_ROUTE_ADD               9
-#define ZEBRA_IPV6_ROUTE_DELETE           10
-#define ZEBRA_REDISTRIBUTE_ADD            11
-#define ZEBRA_REDISTRIBUTE_DELETE         12
-#define ZEBRA_REDISTRIBUTE_DEFAULT_ADD    13
-#define ZEBRA_REDISTRIBUTE_DEFAULT_DELETE 14
-#define ZEBRA_IPV4_NEXTHOP_LOOKUP         15
-#define ZEBRA_IPV6_NEXTHOP_LOOKUP         16
-#define ZEBRA_IPV4_IMPORT_LOOKUP          17
-#define ZEBRA_IPV6_IMPORT_LOOKUP          18
-#define ZEBRA_INTERFACE_RENAME            19
-#define ZEBRA_ROUTER_ID_ADD               20
-#define ZEBRA_ROUTER_ID_DELETE            21
-#define ZEBRA_ROUTER_ID_UPDATE            22
-#define ZEBRA_MESSAGE_MAX                 23
-
-/* Marker value used in new Zserv, in the byte location corresponding
- * the command value in the old zserv header. To allow old and new
- * Zserv headers to be distinguished from each other.
- */
-#define ZEBRA_HEADER_MARKER              255
-
-/* Zebra route's types. */
-#define ZEBRA_ROUTE_SYSTEM               0
-#define ZEBRA_ROUTE_KERNEL               1
-#define ZEBRA_ROUTE_CONNECT              2
-#define ZEBRA_ROUTE_STATIC               3
-#define ZEBRA_ROUTE_RIP                  4
-#define ZEBRA_ROUTE_RIPNG                5
-#define ZEBRA_ROUTE_OSPF                 6
-#define ZEBRA_ROUTE_OSPF6                7
-#define ZEBRA_ROUTE_ISIS                 8
-#define ZEBRA_ROUTE_BGP                  9
-#define ZEBRA_ROUTE_HSLS		 10
-#define ZEBRA_ROUTE_MAX                  11
-
-/* Note: whenever a new route-type or zserv-command is added the
- * corresponding {command,route}_types[] table in lib/log.c MUST be
- * updated! */
-
-/* Map a route type to a string.  For example, ZEBRA_ROUTE_RIPNG -> "ripng". */
-extern const char *zebra_route_string(unsigned int route_type);
-/* Map a route type to a char.  For example, ZEBRA_ROUTE_RIPNG -> 'R'. */
-extern char zebra_route_char(unsigned int route_type);
-/* Map a zserv command type to the same string, 
- * e.g. ZEBRA_INTERFACE_ADD -> "ZEBRA_INTERFACE_ADD" */
-/* Map a protocol name to its number. e.g. ZEBRA_ROUTE_BGP->9*/
-extern int proto_name2num(const char *s);
-
-extern const char *zserv_command_string (unsigned int command);
-
-extern int config_bcm;
-
-/* Zebra's family types. */
 #define ZEBRA_FAMILY_IPV4                1
 #define ZEBRA_FAMILY_IPV6                2
 #define ZEBRA_FAMILY_MAX                 3
-
-/* Error codes of zebra. */
-#define ZEBRA_ERR_NOERROR                0
-#define ZEBRA_ERR_RTEXIST               -1
-#define ZEBRA_ERR_RTUNREACH             -2
-#define ZEBRA_ERR_EPERM                 -3
-#define ZEBRA_ERR_RTNOEXIST             -4
-#define ZEBRA_ERR_KERNEL                -5
-
-/* Zebra message flags */
-#define ZEBRA_FLAG_INTERNAL           0x01
-#define ZEBRA_FLAG_SELFROUTE          0x02
-#define ZEBRA_FLAG_BLACKHOLE          0x04
-#define ZEBRA_FLAG_IBGP               0x08
-#define ZEBRA_FLAG_SELECTED           0x10
-#define ZEBRA_FLAG_CHANGED            0x20
-#define ZEBRA_FLAG_STATIC             0x40
-#define ZEBRA_FLAG_REJECT             0x80
-
-/* Zebra nexthop flags. */
-#define ZEBRA_NEXTHOP_IFINDEX            1
-#define ZEBRA_NEXTHOP_IFNAME             2
-#define ZEBRA_NEXTHOP_IPV4               3
-#define ZEBRA_NEXTHOP_IPV4_IFINDEX       4
-#define ZEBRA_NEXTHOP_IPV4_IFNAME        5
-#define ZEBRA_NEXTHOP_IPV6               6
-#define ZEBRA_NEXTHOP_IPV6_IFINDEX       7
-#define ZEBRA_NEXTHOP_IPV6_IFNAME        8
-#define ZEBRA_NEXTHOP_BLACKHOLE          9
 
 #ifndef INADDR_LOOPBACK
 #define	INADDR_LOOPBACK	0x7f000001	/* Internet address 127.0.0.1.  */
@@ -410,23 +279,6 @@ extern int config_bcm;
 #define SAFI_UNICAST_MULTICAST    3
 #define SAFI_MPLS_VPN             4
 #define SAFI_MAX                  5
-
-/* Filter direction.  */
-#define FILTER_IN                 0
-#define FILTER_OUT                1
-#define FILTER_MAX                2
-
-/* Default Administrative Distance of each protocol. */
-#define ZEBRA_KERNEL_DISTANCE_DEFAULT      0
-#define ZEBRA_CONNECT_DISTANCE_DEFAULT     0
-#define ZEBRA_STATIC_DISTANCE_DEFAULT      1
-#define ZEBRA_RIP_DISTANCE_DEFAULT       120
-#define ZEBRA_RIPNG_DISTANCE_DEFAULT     120
-#define ZEBRA_OSPF_DISTANCE_DEFAULT      110
-#define ZEBRA_OSPF6_DISTANCE_DEFAULT     110
-#define ZEBRA_ISIS_DISTANCE_DEFAULT      115
-#define ZEBRA_IBGP_DISTANCE_DEFAULT      200
-#define ZEBRA_EBGP_DISTANCE_DEFAULT       20
 
 /* Flag manipulation macros. */
 #define CHECK_FLAG(V,F)      ((V) & (F))
@@ -480,4 +332,4 @@ struct fifo
 #define FIFO_TOP(F)                                   \
   (FIFO_EMPTY(F) ? NULL : ((struct fifo *)(F))->next)
 
-#endif /* _ZEBRA_H */
+#endif 

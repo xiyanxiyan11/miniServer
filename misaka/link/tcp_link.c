@@ -141,7 +141,6 @@ int tcp_write(struct peer *peer){
     		
   	do
         {
-
       		/* Number of bytes to be sent.  */
                 writenum = stream_get_endp (s) - stream_get_getp (s);
       		num = write (peer->fd, STREAM_PNT (s), writenum);
@@ -159,7 +158,6 @@ int tcp_write(struct peer *peer){
       		    misaka_packet_delete (peer->obuf);
       		    pcount++;
       		}
-
     	 }while (count < MISAKA_WRITE_PACKET_MAX && (s = misaka_write_packet (peer->obuf)) != NULL);
          return pcount;  
 }
@@ -187,7 +185,6 @@ struct peer* peer_tcp_create(const char *dstip, unsigned short dstport, unsigned
 #endif
         peer->su.sin = sin;
 
-        //init the dst unsion
         memset(&sin, 0, sizeof(struct sockaddr_in));
         sin.sin_family = AF_INET;
         if(dstip){
@@ -216,14 +213,11 @@ struct peer * tcp_connect_init(const char *str, unsigned short dstport, unsigned
         if(!peer){
             return NULL;
         }
-
-
         //register api
 	peer->read  = tcp_read;
 	peer->write = tcp_write;
 	peer->start = tcp_connect;
 	peer->mode = MODE_CONNECT;
-	
 	return peer;
 } 
 
@@ -241,7 +235,6 @@ struct peer * tcp_listen_init(int srcport)
             return NULL;
         }
 
-
         //register api
 	peer->read  = tcp_accept;
 	peer->write = tcp_write;
@@ -249,7 +242,6 @@ struct peer * tcp_listen_init(int srcport)
 	peer->mode = MODE_LISTEN;
 	return peer;
 }
-
 
 /* tcp passive init */
 struct peer * tcp_passive_init(union sockunion *su, int fd)
@@ -270,6 +262,5 @@ struct peer * tcp_passive_init(union sockunion *su, int fd)
 	peer->start = tcp_passive;
 	peer->mode = MODE_PASSIVE;
 	
-	//misaka_start(peer);
 	return peer;
 }

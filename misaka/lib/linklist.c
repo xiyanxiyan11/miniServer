@@ -51,7 +51,7 @@ listnode_free (struct listnode *node)
 {
   XFREE (MTYPE_LINK_NODE, node);
 }
-
+
 /* Add new data to the list. */
 void
 listnode_add (struct list *list, void *val)

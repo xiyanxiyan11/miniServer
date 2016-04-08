@@ -17,7 +17,6 @@ int packetnum = 0;
 
 void * test_main(void *val);
 
-
 int tcp_server_creat(const char *address, int port)
 {
     int s_fd; 
@@ -44,29 +43,10 @@ int tcp_server_creat(const char *address, int port)
     return s_fd;
 }
 
-
-int main()
-{
-    int i = 0;
-    pthread_t t;
-    int pid = 0;
-    int *key;
-    spinlock_init(&packetlock);
-    for(i = 1; i <= 10; i++){
-        key = malloc(sizeof(int));
-        *key = i;
-        pid = fork();
-        if(pid == 0)
-            test_main(&pid);
-        //pthread_create(&t, NULL, test_main, (void *)(key));
-        //sleep(1);
-    }
-
-    while(1)
-    sleep(1);
-    return 0;
+void help(void){
+    const char *str = "need thread num!\n";
+    printf("%s", str);
 }
-
 
 void * test_main(void *val) 
 {
@@ -80,7 +60,6 @@ void * test_main(void *val)
     
     char path[MAX_BUF_SIZE] = "./r_test";
     char data_buf1[MAX_BUF_SIZE] = {0};
-    
 
     int sockfd = 0;
     
@@ -100,7 +79,7 @@ void * test_main(void *val)
     sockfd = tcp_server_creat("127.0.0.1", 11111);
     if (sockfd < 0)
     {
-        printf("UDP create server failed\n");
+        printf("tcp create server failed\n");
         return NULL;
     }
 
@@ -128,5 +107,30 @@ void * test_main(void *val)
             }
 
     } 
-} 
+}
+
+int main(int argc, char *argv[])
+{
+    int i = 0;
+    pthread_t t;
+    int tots;
+    int pid = 0;
+    int *key;
+    if(argc != 2){
+        help();
+        return 0;
+    }
+    tots = atoi(argv[1]);
+    spinlock_init(&packetlock);
+    for(i = 1; i <= tots; i++){
+        key = malloc(sizeof(int));
+        *key = i;
+        pid = fork();
+        if(pid == 0)
+            test_main(&pid);
+    }
+    while(1)
+        sleep(1);
+    return 0;
+}
 

@@ -17,7 +17,7 @@ struct peer* peer_ludp_create(const char *spath, const char *dpath)
         snprintf(peer->lsu.sun_path, sizeof(peer->lsu.sun_path), "%s", spath);
         peer->lsu.sun_family = AF_UNIX;
         
-        //init the src union
+        //init the dst union
         memset(&peer->ldsu, 0, sizeof(struct sockaddr_un));
         snprintf(peer->ldsu.sun_path, sizeof(peer->ldsu.sun_path), "%s", dpath);
         peer->ldsu.sun_family = AF_UNIX;
@@ -26,7 +26,6 @@ struct peer* peer_ludp_create(const char *spath, const char *dpath)
 	peer->mode = MODE_CONNECT;
 	return peer;
 }
-
 
 //open the ludp
 int ludp_connect(struct peer* peer)
@@ -55,8 +54,6 @@ int ludp_connect(struct peer* peer)
 	
 	        fprintf(stderr, "bind success to %s :%s\n", peer->lsu.sun_path, strerror(en));
 	}
-
-
         return connect_success;
 }
 
@@ -73,7 +70,6 @@ int ludp_read(struct peer* peer)
         struct sockaddr_un lsu;
         int len;
         unsigned char *ptr;         //used to set route place
-        gcp_message_t *hp;
 
         if (peer->packet_size == 0)
             peer->packet_size = MISAKA_MAX_PACKET_SIZE;
@@ -81,20 +77,15 @@ int ludp_read(struct peer* peer)
         lsu = peer->lsu;
         len = sizeof(struct sockaddr_un);
 
-  	/* readpacket from fd. */
         nbytes = stream_recvfrom (peer->ibuf, peer->fd, MISAKA_MAX_PACKET_SIZE, 0, (struct sockaddr*)&lsu, &len);  
 
-  	/* If read byte is smaller than zero then error occured. */
   	if (nbytes < 0) 
   	{
         
         }
-        
-        /* Clear input buffer. */
         peer->packet_size = 0;
   	return IO_CHECK;                   //0 get one packet
 }
-
 
 /*ludp write process*/
 int ludp_write(struct peer *peer){
@@ -110,11 +101,9 @@ int ludp_write(struct peer *peer){
   	if (!s)
     		return 0;	
     		
-	/* udp Nonblocking write */
+	/* ludp Nonblocking write */
   	do
         {
-                //cut reverse header
-                stream_get(buf, s, MISAKA_HEADER_SIZE);
 			
       		/* Number of bytes to be sent.  */
       		writenum = stream_get_endp (s) - stream_get_getp (s);
@@ -151,13 +140,9 @@ struct peer * ludp_init(const char *srcip, const char *dstip)
             return NULL;
         }
 
-
         //register api
 	peer->read  = ludp_read;
 	peer->write = ludp_write;
 	peer->start = ludp_connect;
-
-	//misaka_start(peer);
 	return peer;
 }
-

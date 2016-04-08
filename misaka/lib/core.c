@@ -13,18 +13,12 @@ struct global_config misaka_config;    //local config handle
 //handle manger
 struct global_servant misaka_servant;  //local servant handle    
 
-struct stream *stream_clone_one(struct stream *from);
-struct stream * stream_clone(struct stream *from);
-int stream_count(struct stream *s);
-void stream_dir_exchange(struct stream *s);
-void dump_packet(struct stream *s);
 int misaka_start_jitter ( int time );
-void reverse_stream(struct stream *s, int size);
 char *peer_uptime (time_t uptime2, char *buf, size_t len,int type);
 int peer_old_time (time_t uptime2, int type);
 void misaka_packet_add(struct stream_fifo* obuf, struct stream* s);
 void misaka_packet_delete(struct stream_fifo *obuf);
-void misaka_uptime_reset ( struct peer *peer );
+void peer_uptime_reset ( struct peer *peer );
 int misaka_stop ( struct peer *peer );
 int misaka_reconnect ( struct peer *peer );
 int peer_delete(struct peer* peer);
@@ -45,16 +39,16 @@ struct stream * misaka_packet_process(struct stream *s, struct peer *peer);
 void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 
-static struct event_handle *events[EVENT_MAX];
+struct event_handle *events[EVENT_MAX];
 
 //alloc peer hash
-void *phash_alloc_func(void *data){
+void *peer_hashalloc_func(void *data){
     return data;
 }
 
 //register peer key val
 void peer_register(struct peer *peer){
-    hash_get(misaka_servant.peer_hash, (void *)peer, phash_alloc_func);
+    hash_get(misaka_servant.peer_hash, (void *)peer, peer_hashalloc_func);
 }
 
 //unregister peer key val
@@ -68,23 +62,23 @@ void *peer_lookup(struct peer *peer){
 } 
 
 //just pop out this packet
-int default_unpack(struct stream *s, struct peer *peer){
+int peer_default_unpack(struct stream *s, struct peer *peer){
     return IO_PACKET;
 }
 
 //do nothing
-int  default_pack(struct stream *s, struct peer *peer){
+int  peer_default_pack(struct stream *s, struct peer *peer){
     return IO_PACKET;
 }
 
-void dump_peer(struct peer *peer){
-    //debug_event(NULL);
+//dump peer info
+void peer_dump(struct peer *peer){
     zlog_debug("peer id: %d\n", peer->id);
     zlog_debug("peer fd: %d\n", peer->fd);
     zlog_debug("peer su: \n");
-    dump_sockunion(&peer->su);
+    sockunion_dump(&peer->su);
     zlog_debug("peer su: \n");
-    dump_sockunion(&peer->dsu);
+    sockunion_dump(&peer->dsu);
     zlog_debug("peer path: %s\n", peer->path);
     zlog_debug("peer type: %d\n", peer->type);
     zlog_debug("peer mode: %d\n", peer->mode);
@@ -97,72 +91,6 @@ void dump_peer(struct peer *peer){
     zlog_debug("peer send: %d\n",     peer->scount);
     zlog_debug("peer recive: %d\n",   peer->rcount);
     zlog_debug("peer obuf count: %d\n",   peer->obuf->count);
-}
-
-//color one packet
-void stream_color_one(struct stream *to, struct stream *from){
-        
-        to->type = from->type;
-        to->src = from->src; 
-        to->dst = from->dst;
-        
-        to->mark= from->mark;         
-        to->su   = from->su;
-        to->dsu  = from->dsu;
-}
-
-//clone one not in deep
-struct stream * stream_clone_one(struct stream *from){
-        struct stream *to = stream_new(MISAKA_MAX_PACKET_SIZE);
-        if(!to){
-            zlog_debug("alloc stream fail");
-            return NULL;
-        }
-        stream_color_one(to, from);
-        stream_put(to, STREAM_PNT(from), stream_get_endp(from) - stream_get_getp(from));
-        return to;
-}
-
-//clone list not in deep
-struct stream * stream_clone(struct stream *from){
-    struct stream *to = NULL;
-    struct stream *head = NULL;
-    struct stream *t;
-    t = from;
-    while(t){
-        if(!head){
-            head = stream_clone_one(t);
-            to = head;
-        }else{
-            to->next = stream_clone_one(t);
-            to= to->next;
-        }
-        t = t->next;
-    }
-    return head;
-}
-
-//color all packet
-void stream_color(struct stream *to, struct stream *from){
-    struct stream *t;
-    int count = 0;
-    t = to;
-    while(t){
-        stream_color_one(t, from);
-        t = t->next;
-    }
-}
-
-//count stream in list
-int stream_count(struct stream *s){
-    struct stream *t;
-    int count = 0;
-    t = s;
-    while(t){
-        ++count;
-        t = t->next;
-    }
-    return count;
 }
 
 //process signal
@@ -185,116 +113,6 @@ void sighandle(int num){
         }
 }
 
-//exchage src and dst
-void stream_dir_exchange(struct stream *s){
-    int tmp;
-    union sockunion tsu;	
-    //reverse src and dst id
-    tmp = s->src;
-    s->src = s->dst;
-    s->dst = tmp;
-
-    //reverse su and dsu
-    tsu = s->su;
-    s->su = s->dsu;
-    s->dsu = tsu;
-}
-
-//dump packet in 16 hex
-void dump_hex(const char *prompt, unsigned char *buf, int len)
-{
-	int i = 0;
-
-	for (i = 0; i < len; i++) {
-		if ((i & 0x0f) == 0) {
-			zlog_debug("%s | 0x%04x", prompt, i);
-		}
-		zlog_debug(" %02x", *buf);
-		buf++;
-	}
-	zlog_debug("\n");
-}
-
-//dump sockunion
-void dump_sockunion(union sockunion *su){
-    char buf[200];
-    sockunion2str (su, buf, 200);
-    zlog_debug("packet address %s\n", buf);
-}
-
-//dump packet
-void dump_packet(struct stream *s){
-    zlog_debug("packet ptr  %p\n", s);
-    zlog_debug("packet type %d\n",  s->type);
-    zlog_debug("packet src  %d\n",  s->src);
-    zlog_debug("packet dst  %d\n",  s->dst);
-    zlog_debug("packet getp %d\n", s->getp);
-    zlog_debug("packet endp  %d\n", s->endp);
-    //dump_sockunion(&s->su);
-    dump_sockunion(&s->dsu);
-}
-
-/* MISAKA start timer jitter. */
-int misaka_start_jitter ( int time )
-{
-    return ( ( rand () % ( time + 1 ) ) - ( time / 2 ) );
-}
-
-//reverse header
-void reverse_stream(struct stream *s, int size){
-    char buf[MISAKA_HEADER_SIZE] = {0};          //empty buffer
-    unsigned char *from, *to;
-    int i = 0;
-    /*reverse header*/
-    stream_put(s, buf, size);
-
-    from = STREAM_PNT(s) + stream_get_endp(s);
-    to = from + size + stream_get_endp(s);
-    for(i = 0; i < size; i++)
-        *to-- = *from--;
-}
-
-/* Display peer uptime.*/
-/* XXX: why does this function return char * when it takes buffer? */
-char *peer_uptime (time_t uptime2, char *buf, size_t len,int type)
-{
-	time_t uptime1;
-  	struct tm *tm;
-
-  	/* Check buffer length. */
-  	if (len < MISAKA_UPTIME_LEN)
-        {
-      		/* XXX: should return status instead of buf... */
-      		snprintf (buf, len, "<error> "); 
-      		return buf;
-        }
-
-  	/* If there is no connection has been done before print `never'. */
-  	if (uptime2 == 0)
-        {
-      		snprintf (buf, len, "never   ");
-      		return buf;
-        }
-
-  	/* Get current time. */
-  	uptime1 = clock();
-  	uptime1 -= uptime2;
-  	tm = gmtime (&uptime1);
-
-	/* Making formatted timer strings. */
-#define ONE_DAY_SECOND 60*60*24
-#define ONE_WEEK_SECOND 60*60*24*7
-
-  	if (uptime1 < ONE_DAY_SECOND)
-    		snprintf (buf, len, "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
-	else if (uptime1 < ONE_WEEK_SECOND)
-    		snprintf (buf, len, "%dd%02dh%02dm", tm->tm_yday, tm->tm_hour, tm->tm_min);
-	else
-    		snprintf (buf, len, "%02dw%dd%02dh", tm->tm_yday/7, tm->tm_yday - ((tm->tm_yday/7) * 7), tm->tm_hour);
-
-	return buf;
-}
-
 //cal peer old time
  int peer_old_time (time_t uptime2, int type)
 {
@@ -306,36 +124,48 @@ char *peer_uptime (time_t uptime2, char *buf, size_t len,int type)
         return (tm->tm_hour > PEER_OLD_TIME);
 }
 
+//peer old  timer
+void peer_uptime_reset ( struct peer *peer )
+{
+    peer->uptime = time ( NULL );
+}
+
+// peer comparison function for sorting.
+int peer_cmp(void* vp1, void * vp2)
+{
+    struct peer *p1;
+    struct peer *p2;
+    p1 = (struct peer *)vp1;
+    p2 = (struct peer *)vp2;
+    return (p1->drole == p2->drole ? 1 : 0);
+}
+
+// Key make function. 
+unsigned int peer_key (void *vp){
+    struct peer *p = (struct peer *)vp;
+    return (unsigned int)p->drole;
+}
+
 //add packet into send fifo
 void misaka_packet_add(struct stream_fifo* obuf, struct stream* s)
 {
-	//Add packet to the end of list.
-	stream_fifo_push(obuf, s);
+    stream_fifo_push(obuf, s);
 }
 
 //free first packet from fifo
 void misaka_packet_delete(struct stream_fifo *obuf)
 {
-	stream_free(stream_fifo_pop(obuf));
-}
-
-//peer old  timer
-void misaka_uptime_reset ( struct peer *peer )
-{
-    peer->uptime = time ( NULL );
+    stream_free(stream_fifo_pop(obuf));
 }
 
 //stop on peer 
 int misaka_stop ( struct peer *peer )
 {
-	/* Increment Dropped count. */
-    	if ( peer->status == TAT_ESTA)
+    	if (peer->status == TAT_ESTA)
     	{ 
-		// set last reset time 
-        	peer->resettime = time ( NULL );
-        	//Reset uptime. 
-        	misaka_uptime_reset ( peer );
-		peer->status = TAT_IDLE;
+            //Reset uptime. 
+            peer_uptime_reset ( peer );
+	    peer->status = TAT_IDLE;
 	}
         
 	//Stop all thread active
@@ -358,16 +188,16 @@ int misaka_stop ( struct peer *peer )
 	peer->uptime = 0;
 	
     	// Clear input and output buffer.  
-    	if ( peer->ibuf )
+    	if (peer->ibuf)
     	{
        	    stream_reset ( peer->ibuf );
 	}
     	stream_fifo_clean (peer->obuf);
 
-    	if ( peer->fd >= 0)
+    	if (peer->fd >= 0)
     	{
-       	        close (peer->fd);
-        	peer->fd = -1;
+       	    close (peer->fd);
+            peer->fd = -1;
     	}
 	return 0;
 }
@@ -380,50 +210,26 @@ int misaka_reconnect ( struct peer *peer )
     return 0;
 }
 
-/* Peer comparison function for sorting.  */
-int peer_cmp(void* vp1, void * vp2)
-{
-    struct peer *p1;
-    struct peer *p2;
-    p1 = (struct peer *)vp1;
-    p2 = (struct peer *)vp2;
-    if(p1->drole == p2->drole)
-            return 1;
-    return 0;
-}
-
-/* Key make function. */
-unsigned int peer_key (void *vp){
-    struct peer *p = (struct peer *)vp;
-    return (unsigned int)p->drole;
-}
-
-/* Delete peer from confguration. */
+//delete peer from confguration. 
 int peer_delete(struct peer* peer)
 {
-
         //remove this peer from peer_list
         listnode_delete(misaka_servant.peer_list,peer);
 
 	//stop peer work
 	misaka_stop(peer);
 
-	/* Buffer.  */
+	/* clean buffer.  */
 	if (peer->ibuf)
 	{
 		stream_free(peer->ibuf);
 		peer->ibuf = NULL;
 	}
+
 	if (peer->obuf)
 	{
 		stream_fifo_free(peer->obuf);
 		peer->obuf = NULL;
-	}
-	/* Free allocated host character. */
-	if (peer->host)
-	{
-		XFREE(MTYPE_STR, peer->host);
-		peer->host = NULL;
 	}
         
         //free io read handle
@@ -446,14 +252,13 @@ int peer_delete(struct peer* peer)
 	return 0;
 }
 
-// Allocate new peer object. 
+//allocate new peer object. 
 struct peer* peer_new()
 {
-        static int count = 0;
 	struct peer* peer;
 	struct stream *s;
 	
-	/* Allocate new peer. */
+	// allocate new peer. 
 	peer = XMALLOC(MTYPE_MISAKA_PEER, sizeof(struct peer));
 	if (NULL == peer)
 		return NULL;
@@ -489,8 +294,8 @@ struct peer* peer_new()
         peer->write = NULL;
         peer->start = NULL;
         peer->stop = NULL;
-	peer->unpack = default_unpack;
-	peer->pack  = default_pack;
+	peer->unpack = peer_default_unpack;
+	peer->pack  =  peer_default_pack;
 
         peer->quick = 0;
         peer->reconnect = 0;
@@ -498,7 +303,7 @@ struct peer* peer_new()
 	peer->peer = NULL;
         
 	/*init time*/
-	misaka_uptime_reset(peer);
+	peer_uptime_reset(peer);
 	
 	/* Last read time set */
 	peer->readtime = time(NULL);
@@ -522,12 +327,13 @@ struct peer* peer_new()
 
         //register loop handle
         peer->loop = misaka_servant.loop;
-
+        
+        //add peer into peer_list
 	listnode_add(misaka_servant.peer_list, peer);
 	return peer;
 }
 
-//look up su in list
+//lookup su in list
 struct peer* peer_lookup_su(struct list *list, union sockunion *su)
 {
 	struct peer* peer;
@@ -561,58 +367,23 @@ struct peer* peer_lookup_dsu(struct list *list, union sockunion *dsu)
 	return NULL;
 }
 
-//lookup the drole
-struct peer* peer_lookup_drole(struct list *list, int drole)
-{
-	struct peer* peer;
-	struct listnode* nn;
-
-	if(list == NULL)
-	    return NULL;
-	
-	LIST_LOOP(list, peer, nn)
-	{
-	       if(peer->drole == drole) 
-		    return peer;
-	}
-	return NULL;
-}
-
-//lookup the role
-struct peer* peer_lookup_role(struct list *list, int role)
-{
-	struct peer* peer;
-	struct listnode* nn;
-
-	if(list == NULL)
-	    return NULL;
-	
-	LIST_LOOP(list, peer, nn)
-	{
-	       if(peer->role == role) 
-		    return peer;
-	}
-	return NULL;
-}
-
 //action when connect success
 int misaka_start_success ( struct peer *peer )
 {
         zlog_debug("bgs connect peer->fd: %d success\n", peer->fd);
-	//set connect status;
-  	peer->status = TAT_ESTA;				        //set establish flag
+  	peer->status = TAT_ESTA;				        
         
         //update time
-	peer->uptime = clock();
+        peer_uptime_reset(peer);
 	
-        if(set_nonblocking(peer->fd) <0 ){                             //set non block
+        if(set_nonblocking(peer->fd) <0 ){                          
             zlog_debug("set nonblock fail\n");
-                    if(peer->fd > 0){
-                        close(peer->fd);
-                    }
-                    peer->fd = 0;
-                    
+            if(peer->fd > 0){
+                close(peer->fd);
+            }
+            peer->fd = 0;
         }
+
         //register read
         if(1 != ev_is_active(peer->t_read)){
             ev_io_init(peer->t_read, misaka_read, peer->fd, EV_READ);
@@ -631,20 +402,16 @@ int misaka_start_success ( struct peer *peer )
     	return 0;
 }
 
-
 //action when connect progress
 int misaka_start_progress ( struct peer *peer )
 {
-
         zlog_debug("bgs connect progress\n");
-	//set connect status;
-	//set change stat by read
-  	peer->status = TAT_IDLE;				        //set establish flag
+  	peer->status = TAT_IDLE;		    //set establish flag
         
         //update time
-	peer->uptime = clock();
+        peer_uptime_reset(peer);
 	
-        if(set_nonblocking(peer->fd) <0 ){                             //set non block
+        if(set_nonblocking(peer->fd) <0 ){                             
                     if(peer->fd > 0)
                         close(peer->fd);
                     peer->fd = 0;
@@ -655,6 +422,7 @@ int misaka_start_progress ( struct peer *peer )
                 peer->t_read->data = peer;
                 ev_io_start(peer->loop, peer->t_read);
         }
+
     	return 0;
 }
 
@@ -692,16 +460,12 @@ void misaka_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int e
         if(NULL == peer)
                 return;
 
-        //check if establish
   	if (peer->status == TAT_ESTA)
         {
       		return;
         }
 
-	//try to connect peer
 	status = peer->start ( peer );
-
-        //connect status check handle
         connect_status_trigger(status , peer);
     	return ;
 }
@@ -716,7 +480,8 @@ int misaka_start(struct peer *peer){
 	    if(!peer->t_connect)
 	        return -1;
 	    peer->t_connect->data = peer;
-            ev_periodic_init(peer->t_connect, misaka_start_thread, fmod (ev_now (peer->loop), RECONNECT_INTERVAL), RECONNECT_INTERVAL, 0);
+            ev_periodic_init(peer->t_connect, misaka_start_thread, \
+                    fmod (ev_now (peer->loop), RECONNECT_INTERVAL), RECONNECT_INTERVAL, 0);
             ev_periodic_start(peer->loop, peer->t_connect);
         }
         return 0;
@@ -725,9 +490,7 @@ int misaka_start(struct peer *peer){
 /* Is there partially written packet or updates we can send right now.  */
 int misaka_write_proceed(struct stream_fifo *obuf)
 {
-	if (stream_fifo_head(obuf))
-		return 1;
-	return 0;
+        return ( stream_fifo_head(obuf) ? 1 : 0 );
 }
 
 /* get packet from write fifo*/
@@ -811,7 +574,7 @@ int read_io_action(int event, struct peer *peer){
         case IO_PACKET:
             s->flag = 0;   //mark as unused
             
-            //@TODO redir for hahaha
+            //@TODO redir for echoserver test
 #if 1
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
@@ -892,10 +655,7 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
         return;
     }
 
-    //zlog_debug("peer %d is read active %d\n", peer->drole, ev_is_active(peer->t_read));
-    
-    /*reset time*/
-    misaka_uptime_reset(peer);			//up data read time
+    peer_uptime_reset(peer);			//up data read time
 
     peer->rcount++;
 
@@ -1079,7 +839,7 @@ void misaka_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int eve
         zlog_debug("##################################Watch#####################\n");
 	LIST_LOOP(misaka_servant.peer_list, peer, nn)
 	{
-	        dump_peer(peer);
+	        peer_dump(peer);
 	        zlog_debug("\n");
 	}
 }
@@ -1207,7 +967,8 @@ int core_init(void)
 	    return -1;
 	misaka_servant.t_distribute->data = &misaka_servant;
 
-        ev_periodic_init(misaka_servant.t_distribute, misaka_task_distribute, fmod (ev_now (misaka_servant.loop), DISTRIBUTE_INTERVAL), DISTRIBUTE_INTERVAL, 0);
+        ev_periodic_init(misaka_servant.t_distribute, misaka_task_distribute, \
+                fmod (ev_now (misaka_servant.loop), DISTRIBUTE_INTERVAL), DISTRIBUTE_INTERVAL, 0);
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_distribute);
 
 	misaka_servant.t_distpatch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
@@ -1215,10 +976,9 @@ int core_init(void)
 	    return -1;
 	misaka_servant.t_distpatch->data = &misaka_servant;
 
-        ev_periodic_init(misaka_servant.t_distpatch, misaka_task_distpatch, fmod (ev_now (misaka_servant.loop), DISPATCH_INTERVAL), DISTRIBUTE_INTERVAL, 0);
+        ev_periodic_init(misaka_servant.t_distpatch, misaka_task_distpatch, \
+                fmod (ev_now (misaka_servant.loop), DISPATCH_INTERVAL), DISTRIBUTE_INTERVAL, 0);
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_distpatch);
-
-
 
 	if(!misaka_servant.thpool)
 	    return -1;

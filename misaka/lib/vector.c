@@ -82,7 +82,7 @@ vector_ensure (vector v, unsigned int num)
   if (v->alloced > num)
     return;
 
-  v->index = XREALLOC (MTYPE_VECTOR_INDEX, 
+  v->index = (void **)XREALLOC (MTYPE_VECTOR_INDEX, 
 		       v->index, sizeof (void *) * (v->alloced * 2));
   memset (&v->index[v->alloced], 0, sizeof (void *) * v->alloced);
   v->alloced *= 2;

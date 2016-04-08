@@ -1,30 +1,8 @@
-/* Hash routine.
- * Copyright (C) 1998 Kunihiro Ishiguro
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation; either version 2, or (at your
- * option) any later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with GNU Zebra; see the file COPYING.  If not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- */
-
 #include "zebra.h"
-
 #include "hash.h"
 #include "memory.h"
 
-/* Allocate a new hash.  */
+/*allocate a new hash.  */
 struct hash *
 hash_create_size (unsigned int size, unsigned int (*hash_key) (void *),
                                      int (*hash_cmp) (const void *, const void *))
@@ -37,7 +15,6 @@ hash_create_size (unsigned int size, unsigned int (*hash_key) (void *),
   hash->hash_key = hash_key;
   hash->hash_cmp = hash_cmp;
   hash->count = 0;
-
   return hash;
 }
 
@@ -72,13 +49,13 @@ hash_get (struct hash *hash, void *data, void * (*alloc_func) (void *))
   key = (*hash->hash_key) (data);
   index = key % hash->size;
 
-  for (backet = hash->index[index]; backet != NULL; backet = backet->next) 
+  for (backet = hash->index[index]; backet != NULL; backet = backet->next){
     if (backet->key == key && (*hash->hash_cmp) (backet->data, data)){
         return backet->data;
     }
+  }
 
-  if (alloc_func)
-    {
+  if (alloc_func){
       newdata = (*alloc_func) (data);
       if (newdata == NULL)
 	return NULL;
@@ -90,7 +67,7 @@ hash_get (struct hash *hash, void *data, void * (*alloc_func) (void *))
       hash->index[index] = backet;
       hash->count++;
       return backet->data;
-    }
+  }
   return NULL;
 }
 

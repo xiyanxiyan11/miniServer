@@ -64,8 +64,9 @@ int main(int argc, char **argv)
 				return 1;
 		}
 	}
+
 	if (background)
-		daemon(0, 1);
+	    daemon(0, 1);
         
         core_init();
 

@@ -30,7 +30,6 @@ static volatile int threads_keepalive;
 static volatile int threads_on_hold;
 
 
-
 /* ========================== STRUCTURES ============================ */
 
 

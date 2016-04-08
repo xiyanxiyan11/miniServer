@@ -1,25 +1,3 @@
-  /*
- * Packet interface
- * Copyright (C) 1999 Kunihiro Ishiguro
- *
- * This file is part of GNU Zebra.
- *
- * GNU Zebra is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2, or (at your option) any
- * later version.
- *
- * GNU Zebra is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with GNU Zebra; see the file COPYING.  If not, write to the Free
- * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.  
- */
-
 #include <stddef.h>
 #include "zebra.h"
 #include "stdlib.h"
@@ -27,7 +5,6 @@
 #include "stream.h"
 #include "memory.h"
 #include "network.h"
-#include "prefix.h"
 #include "log.h"
 #include "memtypes.h"
 
@@ -168,7 +145,7 @@ stream_resize (struct stream *s, size_t newsize)
   u_char *newdata;
   STREAM_VERIFY_SANE (s);
   
-  newdata = XREALLOC (MTYPE_STREAM_DATA, s->data, newsize);
+  newdata = (u_char *)XREALLOC (MTYPE_STREAM_DATA, s->data, newsize);
   
   if (newdata == NULL)
     return s->size;
@@ -185,7 +162,7 @@ stream_resize (struct stream *s, size_t newsize)
   
   return s->size;
 }
-
+
 size_t
 stream_get_getp (struct stream *s)
 {
@@ -207,7 +184,6 @@ stream_get_size (struct stream *s)
   return s->size;
 }
 
-/* Stream structre' stream pointer related functions.  */
 void
 stream_set_getp (struct stream *s, size_t pos)
 {
@@ -222,7 +198,6 @@ stream_set_getp (struct stream *s, size_t pos)
   s->getp = pos;
 }
 
-/* Forward pointer. */
 void
 stream_forward_getp (struct stream *s, size_t size)
 {
@@ -257,8 +232,7 @@ stream_forward_endp (struct stream *s, size_t size)
   
   s->endp += size;
 }
-
-/* Copy from stream to destination. */
+
 void
 stream_get (void *dst, struct stream *s, size_t size)
 {
@@ -274,7 +248,6 @@ stream_get (void *dst, struct stream *s, size_t size)
   s->getp += size;
 }
 
-/* Get next character from the stream. */
 u_char
 stream_getc (struct stream *s)
 {
@@ -292,7 +265,6 @@ stream_getc (struct stream *s)
   return c;
 }
 
-/* Get next character from the stream. */
 u_char
 stream_getc_from (struct stream *s, size_t from)
 {
@@ -685,29 +657,6 @@ stream_put_in_addr (struct stream *s, struct in_addr *addr)
   return sizeof (u32);
 }
 
-/* Put prefix by nlri type format. */
-int
-stream_put_prefix (struct stream *s, struct prefix *p)
-{
-  size_t psize;
-  
-  STREAM_VERIFY_SANE(s);
-  
-  psize = PSIZE (p->prefixlen);
-  
-  if (STREAM_WRITEABLE (s) < psize)
-    {
-      STREAM_BOUND_WARN (s, "put");
-      return 0;
-    }
-  
-  stream_putc (s, p->prefixlen);
-  memcpy (s->data + s->endp, &p->u.prefix, psize);
-  s->endp += psize;
-  
-  return psize;
-}
-
 /* Read size from fd. */
 int
 stream_read (struct stream *s, int fd, size_t size)
@@ -987,4 +936,100 @@ stream_fifo_free (struct stream_fifo *fifo)
 {
   stream_fifo_clean (fifo);
   XFREE (MTYPE_STREAM_FIFO, fifo);
+}
+
+//color one packet
+void 
+stream_color_one(struct stream *to, struct stream *from){
+        to->type = from->type;
+        to->src = from->src; 
+        to->dst = from->dst;
+        to->mark= from->mark;         
+        to->su   = from->su;
+        to->dsu  = from->dsu;
+}
+
+//clone one not in deep
+struct stream * 
+stream_clone_one(struct stream *from){
+        struct stream *to = stream_new(MISAKA_MAX_PACKET_SIZE);
+        if(!to){
+            zlog_debug("alloc stream fail");
+            return NULL;
+        }
+        stream_color_one(to, from);
+        stream_put(to, STREAM_PNT(from), stream_get_endp(from) - stream_get_getp(from));
+        return to;
+}
+
+//clone list not in deep
+struct stream * stream_clone(struct stream *from){
+    struct stream *to = NULL;
+    struct stream *head = NULL;
+    struct stream *t;
+    t = from;
+    while(t){
+        if(!head){
+            head = stream_clone_one(t);
+            to = head;
+        }else{
+            to->next = stream_clone_one(t);
+            to= to->next;
+        }
+        t = t->next;
+    }
+    return head;
+}
+
+
+//color all packet
+void stream_color(struct stream *to, struct stream *from){
+    struct stream *t;
+    int count = 0;
+    t = to;
+    while(t){
+        stream_color_one(t, from);
+        t = t->next;
+    }
+}
+
+//count stream in list
+int stream_count(struct stream *s){
+    struct stream *t;
+    int count = 0;
+    t = s;
+    while(t){
+        ++count;
+        t = t->next;
+    }
+    return count;
+}
+
+//exchage src and dst
+void stream_dir_exchange(struct stream *s){
+    int tmp;
+    union sockunion tsu;	
+    //reverse src and dst id
+    tmp = s->src;
+    s->src = s->dst;
+    s->dst = tmp;
+
+    //reverse su and dsu
+    tsu = s->su;
+    s->su = s->dsu;
+    s->dsu = tsu;
+}
+
+//reverse header
+void reverse_stream(struct stream *s, int size){
+    char buf[MISAKA_HEADER_SIZE] = {0};          //empty buffer
+    unsigned char *from, *to;
+    int i = 0;
+    /*reverse header*/
+    stream_put(s, buf, size);
+
+    from = STREAM_PNT(s) + stream_get_endp(s);
+    to = from + size + stream_get_endp(s);
+    for(i = 0; i < size; i++)
+        *to-- = *from--;
 }

@@ -19,7 +19,6 @@
 #include <signal.h>
 #include <dirent.h>
 
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/if_ether.h>
@@ -303,9 +302,7 @@ int sys_get_wlan_ifname(char *ifname, int nsize)
 			}
 		}
 	}
-
 	fclose(fp);
-
 	return ret;
 }
 
@@ -321,7 +318,6 @@ int pipe_exec(char *shell)
 		memset(buffer, 0, sizeof(buffer));
 		if (fread(buffer, 1, sizeof(buffer)-1, fp) > 0)
 		{
-			//fprintf(stderr, "CMD:%s, RET:%s", buffer);
 			ret = 1;
 		}
 		else
@@ -383,7 +379,6 @@ int get_ppp_pid(char *file)
 	}
 	return pid;
 }
-
 
 char *find_name_by_proc(char *out, int pid)
 {
@@ -608,7 +603,6 @@ static int _pidof(const char *name, pid_t ** pids)
         return count;
 }
 
-
 int pidof(const char *name)
 {
         pid_t *pids;
@@ -621,7 +615,6 @@ int pidof(const char *name)
         }
         return -1;
 }
-
 
 int killall(const char *name, int sig)
 {
@@ -762,4 +755,3 @@ int get_gpio_level(int gpionum)
 {
 	return sysprintf("cat %s/gpio%d/value", GPIO_SYS_PATH, gpionum); 
 }
-

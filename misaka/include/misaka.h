@@ -18,8 +18,10 @@
 #include "thpool.h"
 #include "log.h"
 
+#include "spinlock.h"
 #include "kmem.h"
-#include "gcp.h"
+#include "pub.h"
+#include "msg.h"
 
 #define	MISAKA_UPTIME_LEN	               25
 #define MISAKA_MAX_QUEUE_PACKET                12
@@ -115,7 +117,6 @@ struct peer{
 	struct sockaddr_un ldsu;             /*area local udp*/  
 
 	unsigned short port;                 /* Destination port for peer */
-	char *host;			     /* Printable address of the peer. */
 	char path[MISAKA_PATH_SIZE];	     //path buffer used for device
 
   	int type;                   	     /*peer type*/
@@ -170,7 +171,6 @@ struct global_config{
 	int role;
 };
 
-
 /*global manager*/
 struct global_servant{
 
@@ -213,6 +213,13 @@ struct event_handle{
     int type;
 }event_handle_t;
 
+//context for handle event
+struct context_handle{
+    void (*func)(void *arg);                //call back for this context
+    struct context_handle *next;
+    struct spinlock lock;                   //lock for this context
+}context_handle_t;
+
 struct date_time{
 	u16 year;
 	u8 month;
@@ -222,10 +229,6 @@ struct date_time{
 	u8 second;
 	u16 missecond;
 };
-
-#define SET_TAT(stat, bit)      (stat |= (1 << bit))
-#define CLEA_TAT(stat, bit)     (stat &= ~(1 << bit))
-#define CHECK_TAT(stat, bit)    (stat &  (1 << bit))
 
 int core_init(void);
 int core_run(void);

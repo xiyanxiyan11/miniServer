@@ -50,7 +50,6 @@ int udp_connect(struct peer* peer)
 {
         int ret, en;
 	//open socket udp socket
-	//open socket udp socket
 	peer->fd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	if (peer->fd < 0)
@@ -124,9 +123,6 @@ int udp_write(struct peer *peer){
   	int num;
   	int count =0;
       	int writenum;
-      	char ip[256];
-  	char buf[MISAKA_HEADER_SIZE] = {0};          //empty buffer
-        
 
         //get first stream;
   	s = misaka_write_packet (peer->obuf);
@@ -142,10 +138,6 @@ int udp_write(struct peer *peer){
       		/* Call write() system call.*/
       		num = sendto(peer->fd, STREAM_PNT (s), writenum, \
                 0, (struct sockaddr*)&s->dsu.sin, sizeof(struct sockaddr));
-
-                //printf("udp send num %d\n", num);
-
-	        inet_ntop(AF_INET, &peer->dsu.sin.sin_addr, ip, 256);
 
       		if (num < 0)
 		{
