@@ -24,6 +24,7 @@ class MisakaTool(object):
 
     def help(self):
         print("use [regex] [dstfile]")
+        
 
 if __name__ == '__main__':
     mtool = MisakaTool()
@@ -36,9 +37,12 @@ if __name__ == '__main__':
         elif op == "-d":
             dstfile = val
         else:
-            MisakaTool.help()
+            pass
 
-    mtool.matchfile(srcfile, dstfile)
+    if None == srcfile or None == dstfile:
+            mtool.help()
+    else:
+            mtool.matchfile(srcfile, dstfile)
 
 
 
