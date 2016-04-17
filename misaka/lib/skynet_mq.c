@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 //TODO adapter skynet mq into misaka for event distribute
+//struct stream *s, means struct stream **s
 
 #define DEFAULT_QUEUE_SIZE 64
 #define MAX_GLOBAL_MQ 0x10000
@@ -28,7 +29,7 @@ struct message_queue {
 	int in_global;
 	int overload;
 	int overload_threshold;
-	struct stream *queue;
+	struct stream **queue;
 	struct message_queue *next;
 };
 
@@ -89,7 +90,7 @@ skynet_mq_create(uint32_t handle) {
 	q->release = 0;
 	q->overload = 0;
 	q->overload_threshold = MQ_OVERLOAD;
-	q->queue = malloc(sizeof(struct stream) * q->cap);
+	q->queue = malloc(sizeof(struct stream *) * q->cap);
 	q->next = NULL;
 
 	return q;
@@ -135,7 +136,7 @@ skynet_mq_overload(struct message_queue *q) {
 }
 
 int
-skynet_mq_pop(struct message_queue *q, struct stream *message) {
+skynet_mq_pop(struct message_queue *q, struct stream **message) {
 	int ret = 1;
 	SPIN_LOCK(q)
 
@@ -173,7 +174,7 @@ skynet_mq_pop(struct message_queue *q, struct stream *message) {
 
 static void
 expand_queue(struct message_queue *q) {
-	struct stream *new_queue = malloc(sizeof(struct stream) * q->cap * 2);
+	struct stream **new_queue = malloc(sizeof(struct stream*) * q->cap * 2);
 	int i;
 	for (i=0;i<q->cap;i++) {
 		new_queue[i] = q->queue[(q->head + i) % q->cap];
@@ -187,7 +188,7 @@ expand_queue(struct message_queue *q) {
 }
 
 void 
-skynet_mq_push(struct message_queue *q, struct stream *message) {
+skynet_mq_push(struct message_queue *q, struct stream **message) {
 	assert(message);
 	SPIN_LOCK(q)
 
@@ -229,7 +230,7 @@ skynet_mq_mark_release(struct message_queue *q) {
 
 static void
 _drop_queue(struct message_queue *q, message_drop drop_func, void *ud) {
-	struct stream msg;
+	struct stream *msg;
 	while(!skynet_mq_pop(q, &msg)) {
 		drop_func(&msg, ud);
 	}
