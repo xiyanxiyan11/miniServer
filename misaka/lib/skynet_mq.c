@@ -1,4 +1,3 @@
-#include "skynet.h"
 #include "skynet_mq.h"
 #include "skynet_handle.h"
 #include "spinlock.h"
@@ -16,7 +15,6 @@
 
 // 0 means mq is not in global mq.
 // 1 means mq is in global mq , or the message is dispatching.
-
 #define MQ_IN_GLOBAL 1
 #define MQ_OVERLOAD 1024
 
@@ -30,7 +28,7 @@ struct message_queue {
 	int in_global;
 	int overload;
 	int overload_threshold;
-	struct skynet_message *queue;
+	struct stream *queue;
 	struct message_queue *next;
 };
 
@@ -91,7 +89,7 @@ skynet_mq_create(uint32_t handle) {
 	q->release = 0;
 	q->overload = 0;
 	q->overload_threshold = MQ_OVERLOAD;
-	q->queue = malloc(sizeof(struct skynet_message) * q->cap);
+	q->queue = malloc(sizeof(struct stream) * q->cap);
 	q->next = NULL;
 
 	return q;
@@ -137,7 +135,7 @@ skynet_mq_overload(struct message_queue *q) {
 }
 
 int
-skynet_mq_pop(struct message_queue *q, struct skynet_message *message) {
+skynet_mq_pop(struct message_queue *q, struct stream *message) {
 	int ret = 1;
 	SPIN_LOCK(q)
 
@@ -175,7 +173,7 @@ skynet_mq_pop(struct message_queue *q, struct skynet_message *message) {
 
 static void
 expand_queue(struct message_queue *q) {
-	struct skynet_message *new_queue = malloc(sizeof(struct skynet_message) * q->cap * 2);
+	struct stream *new_queue = malloc(sizeof(struct stream) * q->cap * 2);
 	int i;
 	for (i=0;i<q->cap;i++) {
 		new_queue[i] = q->queue[(q->head + i) % q->cap];
@@ -189,7 +187,7 @@ expand_queue(struct message_queue *q) {
 }
 
 void 
-skynet_mq_push(struct message_queue *q, struct skynet_message *message) {
+skynet_mq_push(struct message_queue *q, struct stream *message) {
 	assert(message);
 	SPIN_LOCK(q)
 
@@ -231,7 +229,7 @@ skynet_mq_mark_release(struct message_queue *q) {
 
 static void
 _drop_queue(struct message_queue *q, message_drop drop_func, void *ud) {
-	struct skynet_message msg;
+	struct stream msg;
 	while(!skynet_mq_pop(q, &msg)) {
 		drop_func(&msg, ud);
 	}
