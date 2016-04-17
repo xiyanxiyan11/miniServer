@@ -39,7 +39,8 @@ struct stream * misaka_packet_process(struct stream *s, struct peer *peer);
 void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 
-struct event_handle *events[EVENT_MAX];
+struct event_handle *events[EVENT_MAX];     //events callback
+struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
 
 //alloc peer hash
 void *peer_hashalloc_func(void *data){
