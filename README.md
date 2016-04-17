@@ -10,7 +10,7 @@
  - libev support
 
 ##目录结构
- - debug      调试代码
+ - tool      调试代码
  - misaksa    程序本体
     - include 头文件代码
     - lib     框架代码
