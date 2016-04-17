@@ -785,26 +785,8 @@ int misaka_register_evnet( void (*func)(struct stream *), int type){
     handle->func = func;
     handle->type = type;
     listnode_add(misaka_servant.event_list, handle);
-    //events[type] = handle;
+    events[type] = handle;
     return 0;
-}
-
-//task distribue  handle
-void misaka_task_distribute(struct ev_loop *loop, struct ev_periodic *handle, int events){
-    struct stream *s = NULL;
-    struct global_servant *servant   = (struct global_servant *)(handle->data);
-    spinlock_lock(&misaka_servant.task_in->lock);
-    {
-    s = tasklist_pop(servant->task_in);
-    if(s){
-        //maybe push stream into fifo by user
-        //start task thread  to load user func
-        zlog_debug("distribute one packet to thread\n");
-        if ( thpool_add_work(servant->thpool, (void *(*)(void*))misaka_packet_process, (void* )s) < 0)
-                zlog_debug("thread create fail\n");
-    }
-    }
-    spinlock_unlock(&misaka_servant.task_in->lock);
 }
 
 //task dispatch handle
