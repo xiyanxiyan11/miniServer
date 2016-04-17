@@ -92,7 +92,7 @@ void * test_main(void *val)
     s_fd = open("s_test", O_RDONLY, S_IRWXU);
     if (s_fd < 0)
     {
-        printf("open file s_test failed\n");
+        printf("id %d open file s_test failed\n", id);
         return NULL;
     }
 
@@ -107,7 +107,7 @@ void * test_main(void *val)
             }
             num = read(sockfd, data_buf1, MAX_BUF_SIZE);
             if(num > 0){
-                printf("read packet from tcp\n");
+                printf("read packet from tcp %d\n", id);
                 write(w_fd, data_buf1, num);
             }
 
