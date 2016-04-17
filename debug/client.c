@@ -63,9 +63,10 @@ void * test_main(void *val)
 
     int sockfd = 0;
     
-    printf("thread with id %d start \n", id);
 
     id = (int)getpid();
+
+    printf("thread with id %d start \n", id);
     sprintf(path + strlen(path), "%d", id);
     w_fd = open(path, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 
