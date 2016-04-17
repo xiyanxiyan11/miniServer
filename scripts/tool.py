@@ -13,8 +13,13 @@ class MisakaTool(object):
         p = re.compile(reg)
         for mfile in os.listdir('./'):
             if mfile == dstfile:
+                    ##filter dstfile
                     continue
             if None == p.match(mfile):
+                    ##filter None match file
+                    continue
+            if 0 == os.path.getsize(mfile):
+                    ##filter empty file
                     continue
             if not filecmp.cmp(mfile, dstfile):
                     print("%s->%s missmatch " % (mfile, dstfile) )
