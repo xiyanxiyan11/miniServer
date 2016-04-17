@@ -186,17 +186,12 @@ struct global_servant{
     //global handle
     struct ev_loop *loop;
 
-    //task in
-    struct task_list *task_in;
-
     //task out
-    struct task_list *task_out;
+    struct task_list *task_out;              /*dispatch message wait to send*/
 
-    struct thpool_ *thpool;                  //thread pool
+    struct thpool_ *thpool;                  /*thread pool*/
     
-    struct ev_periodic *t_distribute;        /*distribute thread*/
-
-    struct ev_periodic *t_distpatch;         /*distpatch thread*/ 
+    struct ev_periodic *t_distpatch;         /*distpatch msg thread*/ 
     
     struct ev_periodic *t_watch;             /*watch the bgs status*/
 

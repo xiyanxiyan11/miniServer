@@ -585,15 +585,7 @@ int read_io_action(int event, struct peer *peer){
             if(s->dst == misaka_config.role){
                 //push stream into task list
 #ifdef MISAKA_THREAD_SUPPORT
-                    spinlock_lock(&misaka_servant.task_in->lock);
-                        rs = stream_clone_one(s);
-                        if(rs){
-                            tasklist_push(misaka_servant.task_in, rs);
-                        }else{
-                        
-                        }
-                        stream_reset(s);
-                    spinlock_unlock(&misaka_servant.task_in->lock);
+                    /*TODO push msg into message queue*/
 #else
                     rs = stream_clone_one(s);
                     if(rs){
@@ -950,11 +942,6 @@ int core_init(void)
 
 
 #ifdef MISAKA_THREAD_SUPPORT
-        //init task in list
-	if( NULL == (misaka_servant.task_in = tasklist_new())){
-		zlog_debug("Create task_list in failed!\r\n");
-		return -1;
-	}
 
         //init task out list
 	if( NULL == (misaka_servant.task_out = tasklist_new())){
@@ -962,22 +949,14 @@ int core_init(void)
 		return -1;
 	}
 
-	misaka_servant.t_distribute  = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
-	if(!misaka_servant.t_distribute)
-	    return -1;
-	misaka_servant.t_distribute->data = &misaka_servant;
-
-        ev_periodic_init(misaka_servant.t_distribute, misaka_task_distribute, \
-                fmod (ev_now (misaka_servant.loop), DISTRIBUTE_INTERVAL), DISTRIBUTE_INTERVAL, 0);
-        ev_periodic_start(misaka_servant.loop, misaka_servant.t_distribute);
-
+        //init dispath handle
 	misaka_servant.t_distpatch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
 	if(!misaka_servant.t_distpatch)
 	    return -1;
 	misaka_servant.t_distpatch->data = &misaka_servant;
 
         ev_periodic_init(misaka_servant.t_distpatch, misaka_task_distpatch, \
-                fmod (ev_now (misaka_servant.loop), DISPATCH_INTERVAL), DISTRIBUTE_INTERVAL, 0);
+                fmod (ev_now (misaka_servant.loop), DISPATCH_INTERVAL), DISPATCH_INTERVAL, 0);
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_distpatch);
 
 	if(!misaka_servant.thpool)
@@ -985,7 +964,8 @@ int core_init(void)
 #endif
 	misaka_servant.t_watch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
 	
-       // ev_periodic_init(misaka_servant.t_watch, misaka_core_watch, fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
+       //ev_periodic_init(misaka_servant.t_watch, misaka_core_watch, \
+                fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
         //ev_periodic_start(misaka_servant.loop, misaka_servant.t_watch);
 	
 	if(!misaka_servant.t_watch)

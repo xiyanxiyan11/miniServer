@@ -20,7 +20,6 @@ spinlock_init(struct spinlock *lock) {
 
 static inline void
 spinlock_lock(struct spinlock *lock) {
-        printf("lock\n");
 	while (__sync_lock_test_and_set(&lock->lock,1)) {}
 }
 
@@ -31,9 +30,11 @@ spinlock_trylock(struct spinlock *lock) {
 
 static inline void
 spinlock_unlock(struct spinlock *lock) {
-        printf("unlock\n");
 	__sync_lock_release(&lock->lock);
 }
+
+#define LOCK(q) while (__sync_lock_test_and_set(&(q)->lock,1)) {}
+#define UNLOCK(q) __sync_lock_release(&(q)->lock);
 
 static inline void
 spinlock_destroy(struct spinlock *lock) {
@@ -58,7 +59,6 @@ spinlock_init(struct spinlock *lock) {
 
 static inline void
 spinlock_lock(struct spinlock *lock) {
-        printf("lock\n");
 	pthread_mutex_lock(&lock->lock);
 }
 
@@ -69,7 +69,6 @@ spinlock_trylock(struct spinlock *lock) {
 
 static inline void
 spinlock_unlock(struct spinlock *lock) {
-        printf("unlock\n");
 	pthread_mutex_unlock(&lock->lock);
 }
 
