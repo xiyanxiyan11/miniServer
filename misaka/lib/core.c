@@ -584,16 +584,21 @@ int read_io_action(int event, struct peer *peer){
             
             //send to it itsself, stolen it
             if(s->dst == misaka_config.role){
-                //push stream into task list
 #ifdef MISAKA_THREAD_SUPPORT
                     /*TODO push msg into message queue*/
-#else
                     rs = stream_clone_one(s);
+                    if(rs){
+                        //push msg into global queue
+                        skynet_mq_push(queues[s->type], &&rs);
+                        //TODO weak worker
+                    }
+
+#else
                     if(rs){
                         misaka_packet_process(rs, peer);  
                     }
-                    stream_reset(s);
 #endif
+                    stream_reset(s);
             }else{  //to others, just route it
                     rs = stream_clone_one(s);
                     if(rs){
@@ -925,6 +930,12 @@ int core_init(void)
 
 
 #ifdef MISAKA_THREAD_SUPPORT
+        //init global queue
+        //skynet_mq_init();
+
+        //create message queue 
+        for(i = 0; i <= EVENT_MAX; i++)
+            queues[i] = skynet_mq_create(i);
 
         //init task out list
 	if( NULL == (misaka_servant.task_out = tasklist_new())){
@@ -938,6 +949,7 @@ int core_init(void)
 	    return -1;
 	misaka_servant.t_distpatch->data = &misaka_servant;
 
+        //start dispatch handle
         ev_periodic_init(misaka_servant.t_distpatch, misaka_task_distpatch, \
                 fmod (ev_now (misaka_servant.loop), DISPATCH_INTERVAL), DISPATCH_INTERVAL, 0);
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_distpatch);

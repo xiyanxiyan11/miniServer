@@ -21,7 +21,6 @@
 
 struct message_queue {
 	struct spinlock lock;
-	int type;
 	uint32_t handle;
 	int cap;
 	int head;
