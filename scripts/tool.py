@@ -28,7 +28,9 @@ class MisakaTool(object):
                     #print("%s->%s match " % (mfile, dstfile) )
 
     def help(self):
-        print("use [regex] [dstfile]")
+        print("use -s [regex] -d [dstfile]")
+        print("-s src file regex")
+        print("-d dst file name")
         
 
 if __name__ == '__main__':
