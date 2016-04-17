@@ -7,10 +7,14 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "pthread.h"
-#include "spinlock.h"
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-struct spinlock packetlock;
+
+#include "pthread.h"
+
 int packetnum = 0;
 
 #define MAX_BUF_SIZE 1024
@@ -122,7 +126,6 @@ int main(int argc, char *argv[])
         return 0;
     }
     tots = atoi(argv[1]);
-    spinlock_init(&packetlock);
     for(i = 1; i <= tots; i++){
         key = malloc(sizeof(int));
         *key = i;
