@@ -12,10 +12,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
 #include "pthread.h"
-
-int packetnum = 0;
 
 #define MAX_BUF_SIZE 1024
 
@@ -67,7 +64,6 @@ void * test_main(void *val)
 
     int sockfd = 0;
     
-
     id = (int)getpid();
 
     printf("thread with id %d start \n", id);
@@ -96,7 +92,7 @@ void * test_main(void *val)
         return NULL;
     }
 
-    while(1) 
+    while(1)
     {
             bzero(data_buf1, MAX_BUF_SIZE);
             data_len = read(s_fd, data_buf1, MAX_BUF_SIZE/4);
@@ -106,11 +102,12 @@ void * test_main(void *val)
                 write(sockfd, data_buf1, data_len);
             }
             num = read(sockfd, data_buf1, MAX_BUF_SIZE);
-            if(num > 0){
+            if(num <= 0 ){
+                break;  //link closed
+            }else{
                 printf("read packet from tcp %d\n", id);
                 write(w_fd, data_buf1, num);
             }
-
     } 
 }
 
