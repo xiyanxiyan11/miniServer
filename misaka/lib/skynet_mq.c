@@ -1,5 +1,4 @@
 #include "skynet_mq.h"
-#include "skynet_handle.h"
 #include "spinlock.h"
 
 #include <stdio.h>
@@ -71,7 +70,6 @@ skynet_globalmq_pop() {
 		mq->next = NULL;
 	}
 	SPIN_UNLOCK(q)
-
 	return mq;
 }
 

@@ -28,13 +28,8 @@ int  echo_pack(struct stream *s, struct peer *peer)
 //echo event, send this  packet back
 void echo_event(struct stream *s)
 {
-    //reverse dir
     stream_dir_exchange(s);
-#ifdef BGS_THREAD_SUPPORT
     misaka_packet_thread_route(s);
-#else
-    misaka_packet_route(s);
-#endif
 }
 
 int echo_register(void){

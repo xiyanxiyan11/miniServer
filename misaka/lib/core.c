@@ -6,6 +6,7 @@
 #include "thpool.h"
 #include "tasklist.h"
 #include "shm.h"
+#include "skynet_mq.h"
 
 //config manger
 struct global_config misaka_config;    //local config handle
@@ -35,12 +36,28 @@ int misaka_write_proceed(struct stream_fifo *obuf);
 struct stream* misaka_write_packet(struct stream_fifo *obuf);
 int read_io_action(int event, struct peer *peer);
 int misaka_packet_route(struct stream *s);
-struct stream * misaka_packet_process(struct stream *s, struct peer *peer);
+struct stream * misaka_packet_process(struct stream *s);
+struct stream * misaka_packet_thread_route(struct stream *s);
 void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 
 struct event_handle *events[EVENT_MAX];     //events callback
 struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
+
+void *worker(void *arg){
+    struct stream *s;
+    struct message_queue *q = NULL;
+    while( (q = skynet_globalmq_pop())){
+        skynet_mq_pop(q, &s);
+        if(s)
+            continue;
+        if(type == EVENT_NET){
+            misaka_packet_route(s);
+        }else{
+            misaka_packet_process(s);
+        }
+    }
+}
 
 //alloc peer hash
 void *peer_hashalloc_func(void *data){
@@ -580,26 +597,15 @@ int read_io_action(int event, struct peer *peer){
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
-            //clone this packet, and clean the old packet
-            
             //send to it itsself, stolen it
             if(s->dst == misaka_config.role){
-#ifdef MISAKA_THREAD_SUPPORT
-                    /*TODO push msg into message queue*/
                     rs = stream_clone_one(s);
                     if(rs){
-                        //push msg into global queue
-                        skynet_mq_push(queues[s->type], &&rs);
-                        //TODO weak worker
+                        misaka_packet_thread_process(rs);  
                     }
-
-#else
-                    if(rs){
-                        misaka_packet_process(rs, peer);  
-                    }
-#endif
                     stream_reset(s);
-            }else{  //to others, just route it
+            }else{  
+            //to others, just route it
                     rs = stream_clone_one(s);
                     if(rs){
                         misaka_packet_route(rs);
@@ -691,13 +697,12 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
         }
 
     }
-
     read_io_action(ret, peer);
     return;
 }
 
 //process distribute here;
-struct stream *  misaka_packet_process(struct stream *s, struct peer *peer)
+struct stream *  misaka_packet_process(struct stream *s)
 {
     struct stream *curr = NULL;
     struct stream *t = NULL;
@@ -710,7 +715,7 @@ struct stream *  misaka_packet_process(struct stream *s, struct peer *peer)
 
     //zlog_debug("packet process\n");
     //dump_packet(s);
-    if(type <= EVENT_NONE || type >= EVENT_MAX)
+    if(type <= EVENT_NONE || type >= EVENT_NET)
             return NULL;
 
     LIST_LOOP(misaka_servant.event_list, handle, nn)
@@ -772,11 +777,15 @@ int misaka_packet_route(struct stream *s){
     return 0;
 }
 
-int misaka_packet_thread_route(struct stream *s){
-    spinlock_lock(&misaka_servant.task_out->lock);
-    tasklist_push(misaka_servant.task_out, s);
-    spinlock_unlock(&misaka_servant.task_out->lock);
-    return 0;
+struct stream * misaka_packet_thread_route(struct stream *s){
+    struct queue *q;
+    int type = s->type;
+    if(type <= EVENT_NONE || type >= EVENT_MAX)
+        return NULL;
+    q = queues[dst];
+    skynet_mq_push(q, &s);
+    thpool_add_work(misaka_servant.thpool, worker, NULL);
+    return NULL;
 }
 
 //register task for evnet
@@ -793,22 +802,6 @@ int misaka_register_evnet( void (*func)(struct stream *), int type){
     listnode_add(misaka_servant.event_list, handle);
     events[type] = handle;
     return 0;
-}
-
-//task dispatch handle
-void misaka_task_distpatch(struct ev_loop *loop, struct ev_periodic *handle, int events){
-    struct stream *s = NULL;
-    struct global_servant *servant   = (struct global_servant *)(handle->data);
-    spinlock_lock(&misaka_servant.task_out->lock);
-    {
-    
-    s = tasklist_pop(servant->task_out);
-    if(s){
-        misaka_packet_route(s);
-    }
-    
-    }
-    spinlock_unlock(&misaka_servant.task_out->lock);
 }
 
 //watch bgs status
@@ -832,72 +825,6 @@ int core_init(void)
     	//ignore pipe
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
-
-#ifdef MISAKA_CACHE_SUPPORT
-//create and open shm 
-        misaka_servant.shm = shm_new(MISAKA_SHM_KEY, MISAKA_MEM_SIZE);
-        if(!misaka_servant.shm){
-            zlog_err("alloc shm manger fail\n");
-            return -1;
-        }else{
-            zlog_debug("alloc shm manager success\n");
-        }
-
-   	mem = shm_open(misaka_servant.shm);
-   	if(NULL == mem){
-   	    zlog_err("alloc mem for cache fail\n");
-   	    return -1;
-   	}else{
-   	    zlog_debug("alloc mem for cache success\n");
-   	}
-
-   	misaka_servant.kmem = init_kmem(mem, MISAKA_MEM_SIZE, MISAKA_MEM_ALIGN);
-
-        //cache for stream
-   	misaka_servant.stream_cache = kmem_cache_create(misaka_servant.kmem,\
-   	        "stream", sizeof(struct stream), MISAKA_MAX_STREAM);
-   	
-   	if(NULL == misaka_servant.stream_cache){
-   	    zlog_err("alloc cache for stream fail\n");
-   	    return -1;
-   	}else{
-   	    zlog_debug("alloc cache for stream success\n");
-   	}
-
-        //cache for data
-   	misaka_servant.data_cache   = kmem_cache_create(misaka_servant.kmem, \
-   	        "data",   MISAKA_MAX_PACKET_SIZE,   MISAKA_MAX_DATA);
-   	
-   	if(NULL == misaka_servant.data_cache){
-   	    zlog_err("alloc cache for data fail\n");
-   	    return -1;
-   	}else{
-   	    zlog_debug("alloc cache for data success\n");
-   	}
-
-
-        //cache for fifo
-   	misaka_servant.fifo_cache = kmem_cache_create(misaka_servant.kmem,\
-   	        "fifo", sizeof(struct stream_fifo), MISAKA_MAX_FIFO);
-   	
-   	if(NULL == misaka_servant.fifo_cache){
-   	    zlog_err("alloc cache for fifo fail\n");
-   	    return -1;
-   	}else{
-   	    zlog_debug("alloc cache for fifo success\n");
-   	}
-
-        //cache for peer
-   	misaka_servant.peer_cache = kmem_cache_create(misaka_servant.kmem, "peer", sizeof(struct peer),\
-   	        MISAKA_MAX_PEER);
-
-   	if(!misaka_servant.peer_cache){
-   	    zlog_err("alloc cache for peer fail\n");
-   	    return -1;
-   	}else{
-   	    zlog_err("alloc cache for peer success\n");
-   	}
-#endif
 
    	misaka_servant.loop = ev_default_loop(0);
 
@@ -929,34 +856,17 @@ int core_init(void)
 	}
 
 
-#ifdef MISAKA_THREAD_SUPPORT
         //init global queue
-        //skynet_mq_init();
+        skynet_mq_init();
 
         //create message queue 
         for(i = 0; i <= EVENT_MAX; i++)
             queues[i] = skynet_mq_create(i);
 
-        //init task out list
-	if( NULL == (misaka_servant.task_out = tasklist_new())){
-		zlog_debug("Create task_list out failed!\r\n");
-		return -1;
-	}
-
-        //init dispath handle
-	misaka_servant.t_distpatch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
-	if(!misaka_servant.t_distpatch)
-	    return -1;
-	misaka_servant.t_distpatch->data = &misaka_servant;
-
-        //start dispatch handle
-        ev_periodic_init(misaka_servant.t_distpatch, misaka_task_distpatch, \
-                fmod (ev_now (misaka_servant.loop), DISPATCH_INTERVAL), DISPATCH_INTERVAL, 0);
-        ev_periodic_start(misaka_servant.loop, misaka_servant.t_distpatch);
-
+        misaka_servant.thpool(1);
 	if(!misaka_servant.thpool)
 	    return -1;
-#endif
+	
 	misaka_servant.t_watch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
 	
        //ev_periodic_init(misaka_servant.t_watch, misaka_core_watch, \
