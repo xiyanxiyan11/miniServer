@@ -4,7 +4,6 @@
 #include "string.h"
 #include "math.h"
 #include "thpool.h"
-#include "tasklist.h"
 #include "shm.h"
 #include "skynet_mq.h"
 
@@ -46,11 +45,13 @@ struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thre
 
 void *worker(void *arg){
     struct stream *s;
+    int type;
     struct message_queue *q = NULL;
     while( (q = skynet_globalmq_pop())){
         skynet_mq_pop(q, &s);
         if(s)
             continue;
+        type = s->type;
         if(type == EVENT_NET){
             misaka_packet_route(s);
         }else{
@@ -782,7 +783,7 @@ struct stream * misaka_packet_thread_route(struct stream *s){
     int type = s->type;
     if(type <= EVENT_NONE || type >= EVENT_MAX)
         return NULL;
-    q = queues[dst];
+    q = queues[type];
     skynet_mq_push(q, &s);
     thpool_add_work(misaka_servant.thpool, worker, NULL);
     return NULL;
