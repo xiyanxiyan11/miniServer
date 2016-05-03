@@ -28,7 +28,7 @@ typedef struct mcpmsg{
 enum EVENT_TYPE{
     EVENT_NONE,
     EVENT_ECHO,
-    EVENT_NET,
+    EVENT_NET,                              //special type for net thread
     EVENT_MAX,
 };
 

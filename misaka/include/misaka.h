@@ -36,8 +36,8 @@
 #define MISAKA_MAX_DATA                        (MISAKA_MAX_STREAM)
 
 //support thread
-#define MISAKA_THREAD_NUM                        1
-//#define MISAKA_THREAD_SUPPORT                  1
+#define MISAKA_THREAD_NUM                        4
+#define MISAKA_THREAD_SUPPORT                    1
 
 //support data cache
 //#define MISAKA_CACHE_SUPPORT                    1
@@ -251,7 +251,7 @@ extern void peer_register(struct peer *peer);
 extern void peer_unregister(struct peer *peer);
 extern void *peer_lookup(struct peer *peer);
 extern void stream_dir_exchange(struct stream *s);
-extern int misaka_packet_thread_route(struct stream *s);
+extern struct stream * misaka_packet_thread_route(struct stream *s);
 extern struct stream* misaka_write_packet(struct stream_fifo *obuf);
 
 //config manger

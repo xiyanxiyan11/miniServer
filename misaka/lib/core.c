@@ -43,20 +43,30 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 struct event_handle *events[EVENT_MAX];     //events callback
 struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
 
+//work used as thread handle for all event
 void *worker(void *arg){
     struct stream *s;
     int type;
     struct message_queue *q = NULL;
+    int count;
+    uint32_t handle;
 
-    while( (q = skynet_globalmq_pop())){
-        skynet_mq_pop(q, &s);
-        if(s)
-            continue;
-        type = s->type;
-        if(type == EVENT_NET){
-            misaka_packet_route(s);
-        }else{
-            misaka_packet_process(s);
+    q = skynet_globalmq_pop();
+    if(!q)
+        return NULL;
+
+    handle = skynet_mq_handle(q);
+    if(handle == (uint32_t)EVENT_NET){
+        for( ; count < 15 && 0 == skynet_mq_pop(q, &s); count ++){
+            if(s)
+                misaka_packet_process(s);
+        }
+    
+    }else{
+        for(;;){
+            skynet_mq_pop(q, &s);
+            if(s)
+                misaka_packet_process(s);
         }
     }
 }
@@ -599,11 +609,12 @@ int read_io_action(int event, struct peer *peer){
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
-            //send to it itsself, stolen it
+            //send to it itsself, stolen it and push into queue
             if(s->dst == misaka_config.role){
                     rs = stream_clone_one(s);
-                    if(rs){
-                        misaka_packet_thread_process(rs);  
+                    if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
+                    {
+                        misaka_packet_thread_route(rs);  
                     }
                     stream_reset(s);
             }else{  
@@ -779,13 +790,13 @@ int misaka_packet_route(struct stream *s){
     return 0;
 }
 
+//route into queue and call thread
 struct stream * misaka_packet_thread_route(struct stream *s){
-    struct queue *q;
+    struct message_queue *q;
     int type = s->type;
-    if(type <= EVENT_NONE || type >= EVENT_MAX)
-        return NULL;
     q = queues[type];
     skynet_mq_push(q, &s);
+    //@TODO better policy
     thpool_add_work(misaka_servant.thpool, worker, NULL);
     return NULL;
 }
@@ -865,7 +876,7 @@ int core_init(void)
         for(i = 0; i <= EVENT_MAX; i++)
             queues[i] = skynet_mq_create(i);
 
-        misaka_servant.thpool(1);
+        misaka_servant.thpool = thpool_init(MISAKA_THREAD_NUM);
 	if(!misaka_servant.thpool)
 	    return -1;
 	
