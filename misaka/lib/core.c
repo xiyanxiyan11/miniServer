@@ -47,6 +47,7 @@ void *worker(void *arg){
     struct stream *s;
     int type;
     struct message_queue *q = NULL;
+
     while( (q = skynet_globalmq_pop())){
         skynet_mq_pop(q, &s);
         if(s)
