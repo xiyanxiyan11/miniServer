@@ -29,6 +29,7 @@ int  echo_pack(struct stream *s, struct peer *peer)
 void echo_event(struct stream *s)
 {
     stream_dir_exchange(s);
+    s->type = EVENT_NET;
     misaka_packet_thread_route(s);
 }
 

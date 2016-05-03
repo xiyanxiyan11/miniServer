@@ -51,18 +51,25 @@ void *worker(void *arg){
     int count;
     uint32_t handle;
 
+    zlog_debug("thread active prepare handle!\n");
+
     q = skynet_globalmq_pop();
     if(!q)
         return NULL;
 
+    zlog_debug("thread active get handle!\n");
+
     handle = skynet_mq_handle(q);
     if(handle == (uint32_t)EVENT_NET){
+        zlog_debug("thread  task active!\n");
+
         for( ; count < 15 && 0 == skynet_mq_pop(q, &s); count ++){
             if(s)
                 misaka_packet_process(s);
         }
     
     }else{
+        zlog_debug("thread  net active!\n");
         for(;;){
             skynet_mq_pop(q, &s);
             if(s)
@@ -600,6 +607,7 @@ int read_io_action(int event, struct peer *peer){
     int ret = event;
     s = peer->ibuf;
     s->src = peer->drole;
+    zlog_debug("read io action trigger");
     switch(ret){
         case IO_PACKET:
             s->flag = 0;   //mark as unused
@@ -609,11 +617,15 @@ int read_io_action(int event, struct peer *peer){
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
+
+            zlog_debug("io packet trigger\n");
             //send to it itsself, stolen it and push into queue
             if(s->dst == misaka_config.role){
                     rs = stream_clone_one(s);
+                    zlog_debug("thread route packet prepare\n");
                     if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
                     {
+                        zlog_debug("thread route packet start\n");
                         misaka_packet_thread_route(rs);  
                     }
                     stream_reset(s);
