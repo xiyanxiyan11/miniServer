@@ -16,6 +16,7 @@ typedef void (*message_drop)(struct stream **, void *);
 
 void  skynet_globalmq_push(struct message_queue * queue);
 struct message_queue * skynet_globalmq_pop();
+void mq_globalset(struct message_queue *q, int val);
 struct message_queue * skynet_mq_create(uint32_t handle);
 uint32_t skynet_mq_handle(struct message_queue *q);
 int skynet_mq_length(struct message_queue *q);

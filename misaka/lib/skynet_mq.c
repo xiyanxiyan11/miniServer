@@ -40,12 +40,17 @@ struct global_queue {
 
 static struct global_queue *Q = NULL;
 
+
+void mq_globalset(struct message_queue *q, int val){
+    q->in_global = val;
+}
+
 void 
 skynet_globalmq_push(struct message_queue * queue) {
 	struct global_queue *q= Q;
 
 	SPIN_LOCK(q)
-	assert(queue->next == NULL);
+	//assert(queue->next == NULL);
 	if(q->tail) {
 		q->tail->next = queue;
 		q->tail = queue;
@@ -187,7 +192,7 @@ expand_queue(struct message_queue *q) {
 
 void 
 skynet_mq_push(struct message_queue *q, struct stream **message) {
-	assert(message);
+        assert(message);
 	SPIN_LOCK(q)
 
 	q->queue[q->tail] = *message;

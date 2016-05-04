@@ -36,7 +36,7 @@
 #define MISAKA_MAX_DATA                        (MISAKA_MAX_STREAM)
 
 //support thread
-#define MISAKA_THREAD_NUM                        4
+#define MISAKA_THREAD_NUM                        10
 #define MISAKA_THREAD_SUPPORT                    1
 
 //support data cache

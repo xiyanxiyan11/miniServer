@@ -52,28 +52,32 @@ void *worker(void *arg){
     uint32_t handle;
 
     zlog_debug("thread active prepare handle!\n");
-
     q = skynet_globalmq_pop();
-    if(!q)
+    if(!q){
+        zlog_debug("thread active and get handle fail!\n");
         return NULL;
-
-    zlog_debug("thread active get handle!\n");
+    }
 
     handle = skynet_mq_handle(q);
+    zlog_debug("thread active get handle %d!\n", handle);
     if(handle == (uint32_t)EVENT_NET){
-        zlog_debug("thread  task active!\n");
+        zlog_debug("thread  task start!\n");
 
         for( ; count < 15 && 0 == skynet_mq_pop(q, &s); count ++){
-            if(s)
+            if(s){
+                zlog_debug("thread task active\n");
                 misaka_packet_process(s);
+            }
         }
     
     }else{
-        zlog_debug("thread  net active!\n");
+        zlog_debug("thread  net start!\n");
         for(;;){
             skynet_mq_pop(q, &s);
-            if(s)
+            if(s){
+                //zlog_debug("thread net active\n");
                 misaka_packet_process(s);
+            }
         }
     }
 }
@@ -885,8 +889,10 @@ int core_init(void)
         skynet_mq_init();
 
         //create message queue 
-        for(i = 0; i <= EVENT_MAX; i++)
+        for(i = 0; i <= EVENT_MAX; i++){
             queues[i] = skynet_mq_create(i);
+            mq_globalset(queues[i], 0);
+        }
 
         misaka_servant.thpool = thpool_init(MISAKA_THREAD_NUM);
 	if(!misaka_servant.thpool)
