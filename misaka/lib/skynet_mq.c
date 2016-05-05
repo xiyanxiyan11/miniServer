@@ -40,11 +40,6 @@ struct global_queue {
 
 static struct global_queue *Q = NULL;
 
-
-void mq_globalset(struct message_queue *q, int val){
-    q->in_global = val;
-}
-
 void 
 skynet_globalmq_push(struct message_queue * queue) {
 	struct global_queue *q= Q;
@@ -74,6 +69,8 @@ skynet_globalmq_pop() {
 		}
 		mq->next = NULL;
 	}
+	//mark this queue not in global queue
+	mq->in_global = 0;
 	SPIN_UNLOCK(q)
 	return mq;
 }
@@ -86,16 +83,12 @@ skynet_mq_create(uint32_t handle) {
 	q->head = 0;
 	q->tail = 0;
 	SPIN_INIT(q)
-	// When the queue is create (always between service create and service init) ,
-	// set in_global flag to avoid push it to global queue .
-	// If the service init success, skynet_context_new will call skynet_mq_push to push it to global queue.
-	q->in_global = MQ_IN_GLOBAL;
+	q->in_global = 0;
 	q->release = 0;
 	q->overload = 0;
 	q->overload_threshold = MQ_OVERLOAD;
 	q->queue = malloc(sizeof(struct stream *) * q->cap);
 	q->next = NULL;
-
 	return q;
 }
 
@@ -165,13 +158,7 @@ skynet_mq_pop(struct message_queue *q, struct stream **message) {
 		// reset overload_threshold when queue is empty
 		q->overload_threshold = MQ_OVERLOAD;
 	}
-
-	if (ret) {
-		q->in_global = 0;
-	}
-	
 	SPIN_UNLOCK(q)
-
 	return ret;
 }
 
@@ -205,8 +192,8 @@ skynet_mq_push(struct message_queue *q, struct stream **message) {
 	}
 
 	if (q->in_global == 0) {
-		q->in_global = MQ_IN_GLOBAL;
-		skynet_globalmq_push(q);
+		q->in_global = MQ_IN_GLOBAL;    //mark this queue in global
+		skynet_globalmq_push(q);        //push this queue in global
 	}
 	
 	SPIN_UNLOCK(q)

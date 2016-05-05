@@ -891,7 +891,6 @@ int core_init(void)
         //create message queue 
         for(i = 0; i <= EVENT_MAX; i++){
             queues[i] = skynet_mq_create(i);
-            mq_globalset(queues[i], 0);
         }
 
         misaka_servant.thpool = thpool_init(MISAKA_THREAD_NUM);
