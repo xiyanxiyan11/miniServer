@@ -69,8 +69,6 @@ skynet_globalmq_pop() {
 		}
 		mq->next = NULL;
 	}
-	//mark this queue not in global queue
-	mq->in_global = 0;
 	SPIN_UNLOCK(q)
 	return mq;
 }
@@ -158,6 +156,10 @@ skynet_mq_pop(struct message_queue *q, struct stream **message) {
 		// reset overload_threshold when queue is empty
 		q->overload_threshold = MQ_OVERLOAD;
 	}
+
+        if(ret)
+	    q->in_global = 0;
+	
 	SPIN_UNLOCK(q)
 	return ret;
 }
@@ -192,8 +194,8 @@ skynet_mq_push(struct message_queue *q, struct stream **message) {
 	}
 
 	if (q->in_global == 0) {
-		q->in_global = MQ_IN_GLOBAL;    //mark this queue in global
-		skynet_globalmq_push(q);        //push this queue in global
+		q->in_global = MQ_IN_GLOBAL;    
+		skynet_globalmq_push(q);    
 	}
 	
 	SPIN_UNLOCK(q)

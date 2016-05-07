@@ -51,35 +51,30 @@ void *worker(void *arg){
     int count;
     uint32_t handle;
 
-    zlog_debug("thread active prepare handle!\n");
     q = skynet_globalmq_pop();
-    if(!q){
-        zlog_debug("thread active and get handle fail!\n");
+    if(!q)
         return NULL;
-    }
-
-    handle = skynet_mq_handle(q);
-    zlog_debug("thread active get handle %d!\n", handle);
-    if(handle == (uint32_t)EVENT_NET){
-        zlog_debug("thread  task start!\n");
-
-        for( ; count < 15 && 0 == skynet_mq_pop(q, &s); count ++){
-            if(s){
-                zlog_debug("thread task active\n");
-                misaka_packet_process(s);
-            }
-        }
     
-    }else{
-        zlog_debug("thread  net start!\n");
-        for(;;){
-            skynet_mq_pop(q, &s);
-            if(s){
-                //zlog_debug("thread net active\n");
-                misaka_packet_process(s);
+    zlog_debug("thread start!!!\n");
+    for(;;){
+            handle = skynet_mq_handle(q);
+            zlog_debug("thread active handle %d!\n", handle);
+            
+            while(0 == skynet_mq_pop(q, &s)){
+                if(!s)
+                    break;
+                if(handle != EVENT_NET){
+                    misaka_packet_process(s);
+                }else{
+                    misaka_packet_route(s);
+                }
             }
-        }
+            q = skynet_globalmq_pop();
+            if(!q)
+                break;
+            
     }
+    zlog_debug("thread stop!!!\n", handle);
 }
 
 //alloc peer hash
@@ -809,9 +804,12 @@ int misaka_packet_route(struct stream *s){
 //route into queue and call thread
 struct stream * misaka_packet_thread_route(struct stream *s){
     struct message_queue *q;
+    int status;
     int type = s->type;
     q = queues[type];
     skynet_mq_push(q, &s);
+    
+    //try to start one thread
     //@TODO better policy
     thpool_add_work(misaka_servant.thpool, worker, NULL);
     return NULL;
