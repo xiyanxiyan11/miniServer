@@ -3,10 +3,12 @@
 *.ko
 *.obj
 *.elf
+*.pyc
 
 # Precompiled Headers
 *.gch
 *.pch
+*.d
 
 # Libraries
 *.lib
