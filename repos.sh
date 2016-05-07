@@ -47,8 +47,14 @@ case "$1" in
         git push git@github.com:${2}/${3}.git --tag
         ;;
     "clean" )
-        rm *.out
-        rm tags
+        find -name '*.out' |xargs rm 
+        find -name 'cscope.*' |xargs rm 
+        find -name 'tags'  |xargs rm 
+        find -name '*.so'  |xargs rm 
+        find -name '*.o'   |xargs rm 
+        find -name '*.a'   |xargs rm 
+        find -name '*.d'   |xargs rm 
+        find -name '*.pyc' |xargs rm 
         ;;
     "review")
         cscope -bqR
