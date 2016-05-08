@@ -60,6 +60,7 @@ void *worker(void *arg){
             handle = skynet_mq_handle(q);
             zlog_debug("thread active handle %d!\n", handle);
             
+            //@TODO process policy needed
             while(0 == skynet_mq_pop(q, &s)){
                 if(!s)
                     break;
