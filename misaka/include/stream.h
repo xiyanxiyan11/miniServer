@@ -15,15 +15,15 @@ struct stream
     
   int type;             //packet type
 
-  union sockunion su;	             /* Sockunion address of the peer. */
-  union sockunion dsu;	             /* Sockunion address to connect. */
-
+  union sockunion su;	// Sockunion address of the peer
+  union sockunion dsu;	// Sockunion address to connect
 
   int plen;             //payload of the buf
   int rlen;             //next read len;
   int flag;             //you can read some thing here
-  int src;              //where are you from?
-  int dst;              //to where?
+  int src;              //where are you from
+  int dst;              //to where
+  int hotplug;          //hot plug api, build by server, used to update api
 
   int mark;             //mark for user     
 
@@ -31,10 +31,10 @@ struct stream
    * direct access is frowned upon!
    * Use the appropriate functions/macros 
    */
-  size_t getp; 		/* next get position */
-  size_t endp;		/* last valid data position */
-  size_t size;		/* size of data segment */
-  unsigned char *data;  /* data pointer */
+  size_t getp; 		// next get position 
+  size_t endp;		// last valid data position */
+  size_t size;		// size of data segment 
+  unsigned char *data;  // data pointer
 
   int sid;              //id of this session
   int seq;              //seq num
