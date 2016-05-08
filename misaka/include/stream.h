@@ -24,6 +24,7 @@ struct stream
   int src;              //where are you from
   int dst;              //to where
   int hotplug;          //hot plug api, build by server, used to update api
+  int sync;             //packet process sync or not?
 
   int mark;             //mark for user     
 
