@@ -48,34 +48,37 @@ void *worker(void *arg){
     struct stream *s;
     int type;
     struct message_queue *q = NULL;
-    int count;
+    int sands;
     uint32_t handle;
 
-    q = skynet_globalmq_pop();
-    if(!q)
-        return NULL;
     
     zlog_debug("thread start!!!\n");
+    sands = 15;
     for(;;){
+            q = skynet_globalmq_pop();
+            if(!q){
+                zlog_debug("thread stop by empty!!!\n");
+                break;
+            }
+
             handle = skynet_mq_handle(q);
-            zlog_debug("thread active handle %d!\n", handle);
             
-            //@TODO process policy needed
-            while(0 == skynet_mq_pop(q, &s)){
-                if(!s)
-                    break;
+            for(; sands && 0 == skynet_mq_pop(q, &s); sands--){
+                zlog_debug("thread active handle %d!\n", handle);
                 if(handle != EVENT_NET){
                     misaka_packet_process(s);
                 }else{
                     misaka_packet_route(s);
                 }
             }
-            q = skynet_globalmq_pop();
-            if(!q)
-                break;
             
+            if(0 == sands){
+                zlog_debug("thread stop by sands!!!\n");
+                skynet_globalmq_push(q);
+                break;
+            }
     }
-    zlog_debug("thread stop!!!\n", handle);
+    zlog_debug("thread stop!!!\n");
 }
 
 //alloc peer hash
