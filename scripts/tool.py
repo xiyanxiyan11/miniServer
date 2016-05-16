@@ -24,8 +24,7 @@ class MisakaTool(object):
             if not filecmp.cmp(mfile, dstfile):
                     print("%s->%s missmatch " % (mfile, dstfile) )
             else:
-                    pass
-                    #print("%s->%s match " % (mfile, dstfile) )
+                    print("%s->%s match " % (mfile, dstfile) )
 
     def help(self):
         print("use -s [regex] -d [dstfile]")
