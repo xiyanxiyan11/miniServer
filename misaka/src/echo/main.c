@@ -2,6 +2,9 @@
 #include "link.h"
 #include "task.h"
 
+//global debug val
+int debug_level = 0;
+
 //register link and event here
 int core_register()
 {
@@ -50,6 +53,7 @@ int core_register()
 
     return 0;
 }
+
 
 int main(int argc, char **argv)
 {

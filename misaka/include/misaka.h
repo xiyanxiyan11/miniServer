@@ -36,8 +36,9 @@
 #define MISAKA_MAX_DATA                        (MISAKA_MAX_STREAM)
 
 //support thread
-#define MISAKA_THREAD_NUM                        4
-#define MISAKA_THREAD_SUPPORT                    1
+#define MISAKA_THREAD_NUM                        (4)
+#define MISAKA_THREAD_SUPPORT                    (1)
+#define MISAKA_THREAD_SANDS                      (16)
 
 //support data cache
 //#define MISAKA_CACHE_SUPPORT                    1
@@ -203,9 +204,12 @@ struct global_servant{
     struct kmem_cache *fifo_cache;           /*manager all fifo in cache*/
 };
 
+
+//event handle 
 struct event_handle{
     void (*func)(struct stream *);
-    int type;
+    int type;   //event type
+    int plug;   //hot plug flag
 }event_handle_t;
 
 //context for handle event

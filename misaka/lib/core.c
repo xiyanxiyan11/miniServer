@@ -51,7 +51,6 @@ void *worker(void *arg){
     int sands;
     uint32_t handle;
 
-    
     zlog_debug("thread start!!!\n");
     sands = 15;
     for(;;){
@@ -63,7 +62,8 @@ void *worker(void *arg){
 
             handle = skynet_mq_handle(q);
             
-            for(; sands && 0 == skynet_mq_pop(q, &s); sands--){
+            //TODO sand
+            for(; sands && 0 == skynet_mq_pop(q, &s); sands){
                 zlog_debug("thread active handle %d!\n", handle);
                 if(handle != EVENT_NET){
                     misaka_packet_process(s);
