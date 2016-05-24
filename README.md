@@ -27,6 +27,8 @@
  - 业务层
 
 ##MORE
+ - SOME ERROR WITH THREAD
+ - ADD ZLOG FRO DEBUG
  - 热备接口余留
  - 追加脚本支持
  - 调试内存池
