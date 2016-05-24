@@ -12,7 +12,7 @@ int core_register()
     struct peer *peer;
     echo_register();   
 
-    SET_DEBUG(DEBUG_DEBUG);
+    SET_DEBUG(DEBUG_NONE);
     misaka_config.role = ROLE_SERVER;
 #if 0
     //register udp 
