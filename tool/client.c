@@ -23,11 +23,10 @@ int write_block(int fd, char *buf, int nbytes);
 // read in block
 int read_block(int fd, char *buf, int nbytes, int *end){
     int num;
-    int offset = 0;
     int tot = 0;
     *end = 0;
     while(tot != nbytes){
-        num = read(fd, buf + offset, nbytes);
+        num = read(fd, buf + tot, nbytes - tot);
         if(num == 0){
             *end = 1;
             close(fd);
@@ -37,7 +36,6 @@ int read_block(int fd, char *buf, int nbytes, int *end){
             continue;
         }else{
             tot += num;
-            offset += num;
         }
     }
     return tot;
@@ -46,15 +44,13 @@ int read_block(int fd, char *buf, int nbytes, int *end){
 // write in block
 int write_block(int fd, char *buf, int nbytes){
     int num;
-    int offset = 0;
     int tot = 0;
     while(tot != nbytes){
-        num = write(fd, buf + offset, nbytes);
+        num = write(fd, buf + tot, nbytes - tot);
         if(num < 0){
             continue;
         }else{
             tot += num;
-            offset += num;
         }
     }
     return tot;
@@ -157,10 +153,11 @@ void * test_main(void *val)
 int main(int argc, char *argv[])
 {
     int i = 0;
-    pthread_t t;
     int tots;
     int pid = 0;
     int *key;
+    pthread_t t;
+    
     if(argc != 2){
         help();
         return 0;
