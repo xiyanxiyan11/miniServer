@@ -17,6 +17,48 @@
 #define MAX_BUF_SIZE 1024
 
 void * test_main(void *val);
+int read_block(int fd, char *buf, int nbytes, int *end);
+int write_block(int fd, char *buf, int nbytes);
+
+// read in block
+int read_block(int fd, char *buf, int nbytes, int *end){
+    int num;
+    int offset = 0;
+    int tot = 0;
+    *end = 0;
+    while(tot != nbytes){
+        num = read(fd, buf + offset, nbytes);
+        if(num == 0){
+            *end = 1;
+            close(fd);
+            return tot;
+        }
+        if(num < 0){
+            continue;
+        }else{
+            tot += num;
+            offset += num;
+        }
+    }
+    return tot;
+}
+
+// write in block
+int write_block(int fd, char *buf, int nbytes){
+    int num;
+    int offset = 0;
+    int tot = 0;
+    while(tot != nbytes){
+        num = write(fd, buf + offset, nbytes);
+        if(num < 0){
+            continue;
+        }else{
+            tot += num;
+            offset += num;
+        }
+    }
+    return tot;
+}
 
 int tcp_server_creat(const char *address, int port)
 {
@@ -51,16 +93,15 @@ void help(void){
 
 void * test_main(void *val) 
 {
-    int flag;
     int id;
     int s_fd;
     int w_fd;
     int data_len;
     int num;
-    unsigned char  send_buf[MAX_BUF_SIZE];
-    
+    int endf;
+    int ends;
     char path[MAX_BUF_SIZE] = "./r_test";
-    char data_buf1[MAX_BUF_SIZE] = {0};
+    char data_buf[MAX_BUF_SIZE] = {0};
 
     int sockfd = 0;
     
@@ -76,14 +117,12 @@ void * test_main(void *val)
         exit(0);
     }
 
-
     sockfd = tcp_server_creat("127.0.0.1", 11111);
     if (sockfd < 0)
     {
         printf("tcp create server failed\n");
         return NULL;
     }
-
 
     s_fd = open("s_test", O_RDONLY, S_IRWXU);
     if (s_fd < 0)
@@ -94,19 +133,23 @@ void * test_main(void *val)
 
     while(1)
     {
-            bzero(data_buf1, MAX_BUF_SIZE);
-            data_len = read(s_fd, data_buf1, MAX_BUF_SIZE/4);
-            if (data_len > 0)
-            {
+            bzero(data_buf, MAX_BUF_SIZE);
 
-                write(sockfd, data_buf1, data_len);
-            }
-            num = read(sockfd, data_buf1, MAX_BUF_SIZE);
-            if(num <= 0 ){
-                break;  //link closed
-            }else{
-                printf("read packet from tcp %d\n", id);
-                write(w_fd, data_buf1, num);
+            num = read_block(s_fd, data_buf, MAX_BUF_SIZE/4, &endf);
+            data_len = num;
+
+            num = write_block(sockfd, data_buf, data_len);
+            data_len = num;
+
+            num = read_block(sockfd, data_buf, data_len, &ends);
+            
+            write_block(w_fd, data_buf, num);
+
+            if(endf){
+                close(s_fd);
+                close(w_fd);
+                close(sockfd);
+                return NULL;
             }
     } 
 }
