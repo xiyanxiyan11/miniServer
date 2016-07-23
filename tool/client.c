@@ -167,8 +167,11 @@ int main(int argc, char *argv[])
         key = malloc(sizeof(int));
         *key = i;
         pid = fork();
-        if(pid == 0)
+        if(pid == 0){
             test_main(&pid);
+            break;
+        }
+
     }
     while(1)
         sleep(1);
