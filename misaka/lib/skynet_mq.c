@@ -241,3 +241,8 @@ skynet_mq_release(struct message_queue *q, message_drop drop_func, void *ud) {
 		SPIN_UNLOCK(q)
 	}
 }
+
+void 
+skynet_mq_global(struct message_queue *q, int val){
+    q->in_global  = val;
+}

@@ -31,7 +31,7 @@ void echo_event(struct stream *s)
     stream_dir_exchange(s);
     //mark route into net queue
     s->type = EVENT_NET;
-    misaka_packet_thread_route(s);
+    misaka_packet_usr_route(s);
 }
 
 int echo_register(void){

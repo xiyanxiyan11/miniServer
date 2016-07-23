@@ -26,7 +26,7 @@ void skynet_mq_push(struct message_queue *q, struct stream **message);
 void skynet_mq_init();
 void  skynet_mq_mark_release(struct message_queue *q);
 void  skynet_mq_release(struct message_queue *q, message_drop drop_func, void *ud);
-
+void  skynet_mq_global(struct message_queue *q, int val);
 
 
 

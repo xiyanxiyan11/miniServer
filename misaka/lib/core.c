@@ -56,19 +56,20 @@ void *worker(void *arg){
     for(;;){
             q = skynet_globalmq_pop();
             if(!q){
-                zlog_debug("thread stop by empty!!!\n");
+                zlog_debug("thread start fail by empty queue pop!!!\n");
                 break;
             }
 
             handle = skynet_mq_handle(q);
             
             //TODO sand
-            for(; sands && 0 == skynet_mq_pop(q, &s); sands){
-                zlog_debug("thread active handle %d!\n", handle);
+            for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
                 if(handle != EVENT_NET){
+                    zlog_debug("thread active handle %d (task)!\n", handle);
                     misaka_packet_process(s);
                 }else{
-                    misaka_packet_route(s);
+                    zlog_debug("thread active handle %d (net) error!\n", handle);
+                    //TODO can't enter this
                 }
             }
             
@@ -76,9 +77,10 @@ void *worker(void *arg){
                 zlog_debug("thread stop by sands!!!\n");
                 skynet_globalmq_push(q);
                 break;
+            }else{
+                zlog_debug("thread stop by empty pop!!!\n");
             }
     }
-    zlog_debug("thread stop!!!\n");
 }
 
 //alloc peer hash
@@ -819,6 +821,31 @@ struct stream * misaka_packet_thread_route(struct stream *s){
     return NULL;
 }
 
+
+//route task out packet into queue, before send it
+struct stream * misaka_packet_usr_route(struct stream *s){
+    struct message_queue *q;
+    int status;
+    s->type = EVENT_NET;
+    q = queues[s->type];
+    //mark as 1, never push into global queue!!
+    skynet_mq_global(q, 1);
+    skynet_mq_push(q, &s);
+    return NULL;
+}
+
+//look route packet
+void misaka_packet_loop_route(void){
+    int sands = 5;
+    int type = EVENT_NET;
+    struct stream *s;
+    struct message_queue *q;
+    q = queues[type];
+    for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
+        misaka_packet_route(s);
+    }
+}
+
 //register task for evnet
 int misaka_register_evnet( void (*func)(struct stream *), int type){
     struct event_handle *handle = (struct event_handle *)malloc(sizeof(struct event_handle));
@@ -848,11 +875,19 @@ void misaka_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int eve
 	}
 }
 
+
+//watch bgs status
+void misaka_loop_watch(struct ev_loop *loop, struct ev_periodic *handle, int events){
+    misaka_packet_loop_route();
+}
+
+
 //init core 
 int core_init(void)
 {
         int i;
         void *mem;
+    	
     	//ignore pipe
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
@@ -876,6 +911,7 @@ int core_init(void)
         //init hash peer
 	misaka_servant.peer_hash = hash_create(peer_key, (int (*)(const void *, const void *))peer_cmp);
 
+        //init event list
 	misaka_servant.event_list = list_new();
         
         //init the event list
@@ -901,9 +937,9 @@ int core_init(void)
 	
 	misaka_servant.t_watch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
 	
-       //ev_periodic_init(misaka_servant.t_watch, misaka_core_watch, \
+        ev_periodic_init(misaka_servant.t_watch, misaka_loop_watch, \
                 fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
-        //ev_periodic_start(misaka_servant.loop, misaka_servant.t_watch);
+        ev_periodic_start(misaka_servant.loop, misaka_servant.t_watch);
 	
 	if(!misaka_servant.t_watch)
 	    return -1;
