@@ -821,7 +821,6 @@ struct stream * misaka_packet_task_route(struct stream *s){
     return NULL;
 }
 
-
 //route task out packet into queue, before send it
 struct stream * misaka_packet_net_route(struct stream *s){
     struct message_queue *q;

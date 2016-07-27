@@ -212,13 +212,6 @@ struct event_handle{
     int plug;   //hot plug flag
 }event_handle_t;
 
-//context for handle event
-struct context_handle{
-    void (*func)(void *arg);                //call back for this context
-    struct context_handle *next;
-    struct spinlock lock;                   //lock for this context
-}context_handle_t;
-
 struct date_time{
 	u16 year;
 	u8 month;
@@ -259,6 +252,19 @@ extern struct stream * misaka_packet_net_route(struct stream *s);
 extern struct stream * misaka_packet_task_route(struct stream *s);
 extern struct stream* misaka_write_packet(struct stream_fifo *obuf);
 extern void misaka_packet_loop_route(void);
+
+enum event_status{
+    EVENT_STOP = 0,
+    EVENT_LOAD,
+    EVENT_RUN,
+};
+
+//@TODO support of code hotplug
+extern void event_load(int type);
+extern void event_start(int type);
+extern int  event_tat(int type);
+extern void event_stop(int type);
+extern void event_plug(int type);
 
 //config manger
 extern struct global_config misaka_config;    //local config handle
