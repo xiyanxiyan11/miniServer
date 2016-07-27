@@ -255,8 +255,8 @@ extern void peer_register(struct peer *peer);
 extern void peer_unregister(struct peer *peer);
 extern void *peer_lookup(struct peer *peer);
 extern void stream_dir_exchange(struct stream *s);
-extern struct stream * misaka_packet_usr_route(struct stream *s);
-extern struct stream * misaka_packet_thread_route(struct stream *s);
+extern struct stream * misaka_packet_net_route(struct stream *s);
+extern struct stream * misaka_packet_task_route(struct stream *s);
 extern struct stream* misaka_write_packet(struct stream_fifo *obuf);
 extern void misaka_packet_loop_route(void);
 

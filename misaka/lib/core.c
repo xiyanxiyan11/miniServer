@@ -36,7 +36,7 @@ struct stream* misaka_write_packet(struct stream_fifo *obuf);
 int read_io_action(int event, struct peer *peer);
 int misaka_packet_route(struct stream *s);
 struct stream * misaka_packet_process(struct stream *s);
-struct stream * misaka_packet_thread_route(struct stream *s);
+struct stream * misaka_packet_task_route(struct stream *s);
 void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 
@@ -630,8 +630,8 @@ int read_io_action(int event, struct peer *peer){
                     zlog_debug("thread route packet prepare\n");
                     if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
                     {
-                        zlog_debug("thread route packet start\n");
-                        misaka_packet_thread_route(rs);  
+                        zlog_debug("task route packet start\n");
+                        misaka_packet_task_route(rs);  
                     }
                     stream_reset(s);
             }else{  
@@ -808,7 +808,7 @@ int misaka_packet_route(struct stream *s){
 }
 
 //route into queue and call thread
-struct stream * misaka_packet_thread_route(struct stream *s){
+struct stream * misaka_packet_task_route(struct stream *s){
     struct message_queue *q;
     int status;
     int type = s->type;
@@ -823,11 +823,10 @@ struct stream * misaka_packet_thread_route(struct stream *s){
 
 
 //route task out packet into queue, before send it
-struct stream * misaka_packet_usr_route(struct stream *s){
+struct stream * misaka_packet_net_route(struct stream *s){
     struct message_queue *q;
     int status;
-    s->type = EVENT_NET;
-    q = queues[s->type];
+    q = queues[EVENT_NET];
     //mark as 1, never push into global queue!!
     skynet_mq_global(q, 1);
     skynet_mq_push(q, &s);
