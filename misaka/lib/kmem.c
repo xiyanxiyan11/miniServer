@@ -72,7 +72,6 @@ static inline void sem_down(int sem){
 		--sem;	
 }
 
-
 static inline void debug_obj(struct obj *ptr, int mem_size) 
 {						
 		printf("obj(x%p):", ptr); 
@@ -200,7 +199,7 @@ struct obj *init_obj(struct obj *objp, int mem_size)
 	index = ( (char*)(objp + 1));							
 	*((unsigned char *)index) = OF;									/*set start eof*/
 	index += 1;
-	objp->buf = index;								/*set buf ptr*/
+	objp->buf = index;								                /*set buf ptr*/
 	index += mem_size;								
 	*((unsigned char *)index) = OF;									/*set end eof*/
 #ifdef DEBUG	
