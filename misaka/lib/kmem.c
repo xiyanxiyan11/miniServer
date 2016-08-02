@@ -16,14 +16,13 @@
 #endif
 
 #define NAME 40
-#define OF   ((unsigned char)(0xff))		/*OVERFLOW FLAG*/		
-#define OFS  (sizeof(unsigned char))        /* SIZE OF OVERFLOW FLAG*/
+#define OF   ((unsigned char)(0xff))		        /*OVERFLOW FLAG*/		
+#define OFS  (sizeof(unsigned char))                    /*SIZE OF OVERFLOW FLAG*/
 
 struct obj{
 	struct list_head link;				/**< link obj as a list*/
 	void *buf;					/**< point to the mem*/
 };
-
 
 struct kmem_cache{
 	char name[NAME];
@@ -81,7 +80,6 @@ static inline void debug_obj(struct obj *ptr, int mem_size)
 		printf("\n");
 }
 
-
 /**
  * @param[in|out] objp pointer to the obj init 
  * @param[in] mem_size size of the buf
@@ -97,7 +95,8 @@ struct obj *init_obj(struct obj *objp, int mem_size);
  * @param[in] tots total nums of obj manage in this kmem_cache
  * @param[in] align align size as
  * return ptr to kmem_cache inited
- */struct kmem_cache *init_kmem_cache(struct kmem_cache *kmem_cachep, const char *name, int mem_size, int tots, int align);
+ */
+struct kmem_cache *init_kmem_cache(struct kmem_cache *kmem_cachep, const char *name, int mem_size, int tots, int align);
 
 /**
  * @param[in|out] kmem_cachep pointer to the kmem_cache alloc obj from
@@ -141,6 +140,7 @@ int check_overflow(void *bufp, int mem_size){
 	}
 
 }
+
 int kmem_cache_checkoverflow(struct kmem_cache *kmem_cachep, void *bufp)
 {
 	return check_overflow(bufp, kmem_cachep->mem_size);
@@ -163,7 +163,6 @@ void debug_kmem_cache( struct kmem_cache *ptr, int mode)
 		}
 	}
 }
-
 
 void debug_kmem( struct kmem *ptr)
 {	
@@ -239,7 +238,6 @@ struct kmem_cache *init_kmem_cache(struct kmem_cache *kmem_cachep, const char *n
 	return kmem_cachep;
 }
 
-
 struct kmem_cache *kmem_cache_create(struct kmem *kmemp, const char *name, int mem_size, int tots)
 {
 	struct kmem_cache * kmem_cachet = 0;
@@ -270,8 +268,6 @@ printf("need size = %u , kmem_cache_size = %u\n", real_size, sizeof(struct kmem_
 	return kmem_cachet;
 }
 
-
-
 void *kmem_cache_alloc(struct kmem_cache *kmem_cachep)
 {
 	struct list_head *list_headt = 0;
@@ -290,7 +286,6 @@ fprintf(stderr, "obj(x%x):obj get from kmem_cache_alloc\n", objt);
 	return objt->buf;
 }
 
-
 void kmem_cache_free(struct kmem_cache *kmem_cachep, void *bufp)
 {
 	
@@ -299,4 +294,3 @@ void kmem_cache_free(struct kmem_cache *kmem_cachep, void *bufp)
 	--kmem_cachep->used;
 	++kmem_cachep->free;
 }
-

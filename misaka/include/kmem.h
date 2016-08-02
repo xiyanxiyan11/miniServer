@@ -10,7 +10,6 @@
 struct kmem_cache;
 struct kmem;
 
-
 /**
  * Used to debug kmem_cache 	
  * @param[in] ptr pointer to the kmem_cache
@@ -64,6 +63,5 @@ void kmem_cache_free(struct kmem_cache *kmem_cachep, void *bufp);
  *
  */
 int kmem_cache_checkoverflow(struct kmem_cache *kmem_cachep, void *bufp);
-
 
 #endif
