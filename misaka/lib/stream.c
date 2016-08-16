@@ -31,7 +31,7 @@
  * using stream_put..._at() functions.
  */
 #define STREAM_WARN_OFFSETS(S) \
-  zlog_warn ("&(struct stream): %p, size: %lu, endp: %lu, getp: %lu\n", \
+  mlog_warn ("&(struct stream): %p, size: %lu, endp: %lu, getp: %lu\n", \
              (S), \
              (unsigned long) (S)->size, \
              (unsigned long) (S)->getp, \
@@ -47,7 +47,7 @@
 
 #define STREAM_BOUND_WARN(S, WHAT) \
   do { \
-    zlog_warn ("%s: Attempt to %s out of bounds", __func__, (WHAT)); \
+    mlog_warn ("%s: Attempt to %s out of bounds", __func__, (WHAT)); \
     STREAM_WARN_OFFSETS(S); \
     assert (0); \
   } while (0)
@@ -57,7 +57,7 @@
   do { \
     if (((S)->endp + (Z)) > (S)->size) \
       { \
-        zlog_warn ("CHECK_SIZE: truncating requested size %lu\n", \
+        mlog_warn ("CHECK_SIZE: truncating requested size %lu\n", \
                    (unsigned long) (Z)); \
         STREAM_WARN_OFFSETS(S); \
         (Z) = (S)->size - (S)->endp; \
@@ -74,7 +74,7 @@ stream_new (size_t size)
   
   if (size == 0)
   {
-      zlog_warn ("stream_new(): called with 0 size!");
+      mlog_warn ("stream_new(): called with 0 size!");
       return NULL;
   }
   
@@ -728,7 +728,7 @@ stream_read_try(struct stream *s, int fd, size_t size)
   /* Error: was it transient (return -2) or fatal (return -1)? */
   if (ERRNO_IO_RETRY(errno))
     return -2;
-  zlog_warn("%s: read failed on fd %d: %s", __func__, fd, safe_strerror(errno));
+  mlog_warn("%s: read failed on fd %d: %s", __func__, fd, safe_strerror(errno));
   return -1;
 }
 
@@ -760,7 +760,7 @@ stream_recvfrom (struct stream *s, int fd, size_t size, int flags,
   /* Error: was it transient (return -2) or fatal (return -1)? */
   if (ERRNO_IO_RETRY(errno))
     return -2;
-  zlog_warn("%s: read failed on fd %d: %s", __func__, fd, safe_strerror(errno));
+  mlog_warn("%s: read failed on fd %d: %s", __func__, fd, safe_strerror(errno));
   return -1;
 }
 
@@ -954,7 +954,7 @@ struct stream *
 stream_clone_one(struct stream *from){
         struct stream *to = stream_new(MISAKA_MAX_PACKET_SIZE);
         if(!to){
-            zlog_debug("alloc stream fail");
+            mlog_debug("alloc stream fail");
             return NULL;
         }
         stream_color_one(to, from);

@@ -10,7 +10,7 @@ int echo_unpack(struct stream *s, struct peer *peer)
 {
     //new peer, mark peer when first packet come 
     if(NULL == s){
-        zlog_debug("register new tcp peer as %d\n", peerid);
+        mlog_debug("register new tcp peer as %d\n", peerid);
         peer->drole = peerid++;
         peer_register(peer);
     }else{

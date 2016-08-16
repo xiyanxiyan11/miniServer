@@ -1,18 +1,20 @@
 #include "misaka.h"
 #include "link.h"
 #include "task.h"
-
-//global debug val
-int debug_level = 0;
+#include "log.h"
 
 //register link and event here
 int core_register()
 {
-
     struct peer *peer;
-    echo_register();   
 
+    int ret = INIT_DEBUG("/tmp/misaka.conf");
+    if(ret < 0){
+        printf("error in debug init with %d\n", ret);
+    }
     SET_DEBUG(DEBUG_DEBUG);
+    
+    echo_register();   
     misaka_config.role = ROLE_SERVER;
 
 

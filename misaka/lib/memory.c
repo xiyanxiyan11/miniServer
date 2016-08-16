@@ -23,7 +23,7 @@ void *misakamalloc(int mtype, int size){
             break;
     }
     if(mem == NULL){
-        zlog_err("malloc ptr fail with type %d\n", mtype);
+        mlog_err("malloc ptr fail with type %d\n", mtype);
     }
     return mem;
 }
@@ -38,7 +38,7 @@ void *misakarealloc(int mtype, void *ptr, int size){
 
 void misakafree(int mtype, void *ptr){
     if(!ptr){
-        zlog_err("free empty ptr type %d\n", mtype);
+        mlog_err("free empty ptr type %d\n", mtype);
         return;
     }
     switch(mtype){
