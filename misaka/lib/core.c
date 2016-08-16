@@ -5,6 +5,7 @@
 #include "math.h"
 #include "thpool.h"
 #include "shm.h"
+#include "dlfcn.h"
 #include "skynet_mq.h"
 
 //config manger
@@ -42,6 +43,28 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 
 struct event_handle *events[EVENT_MAX];     //events callback
 struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
+
+//reload callbacker for misaka
+int load_event(struct event_handle *ehandle){
+    void *handle = NULL;
+    void (*fcn)(struct stream *);
+    const char *errmsg = NULL;
+
+    handle = dlopen(ehandle->path, RTLD_NOW);
+    if(!handle){
+        mlog_err("open lib fail\n");
+    }
+    dlerror();
+    fcn = (void (*)(struct stream *))dlsym(handle, "callback");     //init callback
+    if((errmsg = dlerror()) != NULL)
+    {
+        printf("%s\n", errmsg);
+        return 1;
+    }
+    ehandle->func = fcn;
+    dlclose(handle);
+    return 0;
+}
 
 //work used as thread handle for all event
 void *worker(void *arg){
@@ -919,7 +942,6 @@ int core_init(void)
 	}else{
 	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
-
 
         //init global queue
         skynet_mq_init();

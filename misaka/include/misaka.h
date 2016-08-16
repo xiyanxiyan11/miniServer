@@ -207,11 +207,13 @@ struct global_servant{
 
 //event handle 
 struct event_handle{
-    void (*func)(struct stream *);
-    int type;   //event type
-    int plug;   //hot plug flag
+    char path[MISAKA_PATH_SIZE];    //lib path for event handle
+    void (*func)(struct stream *);  //call back function register
+    int type;                       //event type
+    int plug;                       //hot plug flag
 }event_handle_t;
 
+//date time structure
 struct date_time{
 	u16 year;
 	u8 month;
@@ -258,6 +260,7 @@ enum event_status{
     EVENT_LOAD,
     EVENT_RUN,
 };
+
 
 //@TODO support of code hotplug
 extern void event_load(int type);

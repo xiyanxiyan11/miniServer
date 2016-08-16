@@ -3,7 +3,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include
 bin_PROGRAMS = echoserver
 echoserver_SOURCES = main.c
 echoserver_LDFLAGS=-L$(top_srcdir)/lib -L$(top_srcdir)/task -L$(top_srcdir)/link 
-LIBS= -lcore -llink -ltask -lpthread -lev -lm -lzlog -g -O0 
+LIBS= -lcore -llink -ltask -lpthread -lev -lm -lzlog  -ldl  -g -O0 
 
 
 
