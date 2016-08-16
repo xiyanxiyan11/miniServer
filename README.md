@@ -8,16 +8,17 @@
 
 ## DEPEND
  - libev support
+ - zlog support
 
 ## 目录结构
  - tool      调试代码
  - misaksa    程序本体
-    - include 头文件代码
-    - lib     框架代码
-    - link    连接方式横向扩展
-    - task    业务层代码
-    - src     逻辑注册
  - scripts    辅助脚本
+    - include 头文件
+    - lib     框架代码
+    - link    通信插件
+    - task    业务层代码
+    - app     逻辑层代码
 
 # 组件清单
  - 事物调度
