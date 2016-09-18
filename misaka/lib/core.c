@@ -1067,7 +1067,7 @@ int core_init(void)
 	if(!misaka_servant.thpool)
 	    return -1;
 	
-	//init watch timer
+	//init net timer
 	misaka_servant.t_watch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
         ev_periodic_init(misaka_servant.t_watch, misaka_loop_watch, \
                 fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
