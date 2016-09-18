@@ -8,16 +8,18 @@ int core_register()
 {
     struct peer *peer;
 
+    //register debug api
     int ret = INIT_DEBUG("/tmp/misaka.conf");
     if(ret < 0){
         printf("error in debug init with %d\n", ret);
     }
     SET_DEBUG(DEBUG_DEBUG);
-    
-    echo_register();   
+
+    //register event
+    register_c_event("task/.libs/libecho.so", EVENT_ECHO);
+
+
     misaka_config.role = ROLE_SERVER;
-
-
 //support support test
 #if 0
     peer  =  udp_init("192.168.97.98", 8000, 11112);
@@ -38,13 +40,11 @@ int core_register()
 #if 1
     peer = tcp_listen_init(TCP_DSTPORT);
     peer->listens = 3;
-    peer->pack = echo_pack;
-    peer->unpack = echo_unpack;
+    peer->packet_size = 512;
     peer->role = ROLE_SERVER;
     peer->drole = ROLE_TCP;
     peer_register(peer);
     misaka_start(peer);
-
 #endif
     return 0;
 }

@@ -981,7 +981,6 @@ struct stream * stream_clone(struct stream *from){
     return head;
 }
 
-
 //color all packet
 void stream_color(struct stream *to, struct stream *from){
     struct stream *t;

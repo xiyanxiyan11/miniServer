@@ -9,7 +9,9 @@ AC_CONFIG_SRCDIR([include/misaka.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
-AC_PROG_CC
+AC_PROG_CXX
+LT_INIT
+AC_PROG_LIBTOOL
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lev':

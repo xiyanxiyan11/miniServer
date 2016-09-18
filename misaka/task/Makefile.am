@@ -1,4 +1,5 @@
-noinst_LIBRARIES = libtask.a
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AUTOMAKE_OPTIONS=foreign  
 LIBS= -g -O0
-libtask_a_SOURCES = echo_task.c
+lib_LTLIBRARIES=libecho.la
+AM_CPPFLAGS = -I$(top_srcdir)/include
+libecho_la_SOURCES = echo_task.c

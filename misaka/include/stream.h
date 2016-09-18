@@ -3,6 +3,7 @@
 
 #include "zebra.h"
 #include "sockunion.h"
+#include "msg.h"
 
 /* Stream buffer. */
 struct stream
@@ -39,6 +40,8 @@ struct stream
 
   int sid;              //id of this session
   int seq;              //seq num
+
+  void *pdata;          //private data as child of stream 
 };
 
 /* First in first out queue structure. */

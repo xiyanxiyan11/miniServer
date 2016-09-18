@@ -62,10 +62,6 @@ int tcp_read(struct peer* peer)
 	int type;
 	int close = 0;
 
-        //mlog_debug("tcp read trigger with packet %d\n", peer->obuf->count);
-
-        peer->packet_size = MISAKA_MAX_PACKET_SIZE/2;
-
   	nbytes = read(peer->fd, peer->ibuf->data, peer->packet_size);
   	mlog_debug("%d bytes read from peer %d, drole %d\n", nbytes, peer->fd, peer->drole);
   	peer->ibuf->endp = nbytes;
@@ -114,9 +110,10 @@ int tcp_accept(struct peer *peer){
         cpeer->pack = peer->pack;
         cpeer->unpack = peer->unpack;
 
+        //trans packet_size attribute to passive peer
+        cpeer->packet_size = peer->packet_size;
+
         //call unpack to distribute id for this peer
-        //empty used just trigger unpack
-        ret = cpeer->unpack(NULL, cpeer);
         if(ret == IO_PASSIVE_CLOSE){
             return ret;
         }
@@ -261,6 +258,7 @@ struct peer * tcp_passive_init(union sockunion *su, int fd)
 	peer->write = tcp_write;
 	peer->start = tcp_passive;
 	peer->mode = MODE_PASSIVE;
+	peer->old = 1;
 	
 	return peer;
 }

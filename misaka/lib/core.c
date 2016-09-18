@@ -7,6 +7,7 @@
 #include "shm.h"
 #include "dlfcn.h"
 #include "skynet_mq.h"
+#include "msg.h"
 
 //config manger
 struct global_config misaka_config;    //local config handle
@@ -41,28 +42,15 @@ struct stream * misaka_packet_task_route(struct stream *s);
 void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 
-struct event_handle *events[EVENT_MAX];     //events callback
+struct event_handle events[EVENT_MAX];      //events callback
 struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
 
-//reload callbacker for misaka
-int load_event(struct event_handle *ehandle){
-    void *handle = NULL;
-    void (*fcn)(struct stream *);
-    const char *errmsg = NULL;
-
-    handle = dlopen(ehandle->path, RTLD_NOW);
-    if(!handle){
-        mlog_err("open lib fail\n");
-    }
-    dlerror();
-    fcn = (void (*)(struct stream *))dlsym(handle, "callback");     //init callback
-    if((errmsg = dlerror()) != NULL)
-    {
-        printf("%s\n", errmsg);
-        return 1;
-    }
-    ehandle->func = fcn;
-    dlclose(handle);
+//register api for c
+int register_c_event(const char *path, int type){
+    struct event_handle *handle = NULL;
+    handle = &events[type];
+    handle->plug = C_PLUGIN_TYPE;
+    snprintf(handle->path, MISAKA_PATH_SIZE, "%s", path);
     return 0;
 }
 
@@ -74,34 +62,32 @@ void *worker(void *arg){
     int sands;
     uint32_t handle;
 
-    mlog_debug("thread start!!!\n");
+    mlog_debug("thread start!\n");
     sands = 15;
     for(;;){
             q = skynet_globalmq_pop();
             if(!q){
-                mlog_debug("thread start fail by empty queue pop!!!\n");
+                mlog_debug("thread start fail by empty queue pop!\n");
                 break;
             }
 
             handle = skynet_mq_handle(q);
             
-            //TODO sand
+            //TODO loadbalance policy
             for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
                 if(handle != EVENT_NET){
-                    mlog_debug("thread active handle %d (task)!\n", handle);
+                    mlog_debug("thread active handle %d (task) success!\n", handle);
                     misaka_packet_process(s);
                 }else{
                     mlog_debug("thread active handle %d (net) error!\n", handle);
-                    //TODO can't enter this
                 }
             }
-            
             if(0 == sands){
-                mlog_debug("thread stop by sands!!!\n");
+                mlog_debug("thread stop by sands!\n");
                 skynet_globalmq_push(q);
                 break;
             }else{
-                mlog_debug("thread stop by empty pop!!!\n");
+                mlog_debug("thread stop by empty pop!\n");
             }
     }
 }
@@ -113,11 +99,19 @@ void *peer_hashalloc_func(void *data){
 
 //register peer key val
 void peer_register(struct peer *peer){
+    //trigger when connected, usr must set peer id
+    if (peer->on_connect){
+        peer->on_connect(peer);
+    }
     hash_get(misaka_servant.peer_hash, (void *)peer, peer_hashalloc_func);
 }
 
 //unregister peer key val
 void peer_unregister(struct peer *peer){
+    //trigger on disconnect
+    if(peer->on_disconnect){
+        peer->on_disconnect(peer);
+    }
     hash_release(misaka_servant.peer_hash, (void *)peer);
 }
 
@@ -155,7 +149,6 @@ void peer_dump(struct peer *peer){
     mlog_debug("peer listens: %d\n",  peer->listens);
     mlog_debug("peer send: %d\n",     peer->scount);
     mlog_debug("peer recive: %d\n",   peer->rcount);
-    mlog_debug("peer obuf count: %d\n",   peer->obuf->count);
 }
 
 //process signal
@@ -178,18 +171,18 @@ void sighandle(int num){
         }
 }
 
-//cal peer old time
+//peer old time
  int peer_old_time (time_t uptime2, int type)
 {
 	time_t uptime1;
   	struct tm *tm;
-  	uptime1 = clock();
+  	uptime1 = time(NULL);
   	uptime1 -= uptime2;
   	tm = gmtime (&uptime1);
-        return (tm->tm_hour > PEER_OLD_TIME);
+        return (tm->tm_sec > PEER_OLD_TIME);
 }
 
-//peer old  timer
+//peer update time of peer
 void peer_uptime_reset ( struct peer *peer )
 {
     peer->uptime = time ( NULL );
@@ -264,7 +257,7 @@ int misaka_stop ( struct peer *peer )
        	    close (peer->fd);
             peer->fd = -1;
     	}
-	return 0;
+            return 0;
 }
 
 //udp reconnect or device reconnect 
@@ -275,22 +268,23 @@ int misaka_reconnect ( struct peer *peer )
     return 0;
 }
 
-//delete peer from confguration. 
+//delete peer 
 int peer_delete(struct peer* peer)
 {
         //remove this peer from peer_list
         listnode_delete(misaka_servant.peer_list,peer);
-
+    
 	//stop peer work
 	misaka_stop(peer);
 
-	/* clean buffer.  */
+	//clean in buffer
 	if (peer->ibuf)
 	{
 		stream_free(peer->ibuf);
 		peer->ibuf = NULL;
 	}
-
+        
+        //clean out buffer
 	if (peer->obuf)
 	{
 		stream_fifo_free(peer->obuf);
@@ -312,31 +306,31 @@ int peer_delete(struct peer* peer)
 	    if(peer->t_connect)
 	        free(peer->t_connect);
         }
-	/* Free peer structure. */
+
 	XFREE(MTYPE_MISAKA_PEER, peer);
 	return 0;
 }
 
-//allocate new peer object. 
+//new peer 
 struct peer* peer_new()
 {
 	struct peer* peer;
 	struct stream *s;
 	
-	// allocate new peer. 
+	//allocate new peer. 
 	peer = XMALLOC(MTYPE_MISAKA_PEER, sizeof(struct peer));
 	if (NULL == peer)
 		return NULL;
 
 	memset(peer, 0, sizeof(struct peer));
 
-	/* Set default value. */
+	//set default value
 	peer->fd = -1;
 	peer->v_connect = MISAKA_DEFAULT_CONNECT_RETRY;
 
 	peer->status = TAT_IDLE;
 
-	/* Create read buffer.  */
+	//create read buffer
 	peer->ibuf = stream_new(MISAKA_MAX_PACKET_SIZE);
 	if(NULL == peer->ibuf){
             mlog_debug("alloc ibuf fail\n");
@@ -355,25 +349,27 @@ struct peer* peer_new()
 	    return NULL;
 	}
 
-        peer->read = NULL;
+        peer->read  = NULL;
         peer->write = NULL;
         peer->start = NULL;
-        peer->stop = NULL;
+        peer->stop  = NULL;
 	peer->unpack = peer_default_unpack;
 	peer->pack  =  peer_default_pack;
+	peer->on_connect = NULL;
+	peer->on_disconnect = NULL;
 
         peer->quick = 0;
         peer->reconnect = 0;
 	peer->maxcount = 50;
 	peer->peer = NULL;
         
-	/*init time*/
+	//update time for peer
 	peer_uptime_reset(peer);
 	
-	/* Last read time set */
+	//last read time set
 	peer->readtime = time(NULL);
 
-	/* Last reset time set */
+	//last reset time set
 	peer->resettime = time(NULL);
 
 	peer->t_read     = (struct ev_io    *)malloc(sizeof(struct ev_io));
@@ -405,12 +401,12 @@ struct peer* peer_lookup_su(struct list *list, union sockunion *su)
 	struct listnode* nn;
 
 	if(list == NULL)
-		return NULL;
+	    return NULL;
 
 	LIST_LOOP(list, peer, nn)
 	{
-                if(!sockunion_cmp (&peer->su, su));
-		        return peer;
+            if(!sockunion_cmp (&peer->su, su));
+		return peer;
 	}
 	return NULL;
 }
@@ -420,14 +416,12 @@ struct peer* peer_lookup_dsu(struct list *list, union sockunion *dsu)
 {
 	struct peer* peer;
 	struct listnode* nn;
-
 	if(NULL == list)
-		return NULL;
-	
+	    return NULL;
 	LIST_LOOP(list, peer, nn)
 	{
-                if(!sockunion_cmp (&peer->dsu, dsu));
-		        return peer;
+            if(!sockunion_cmp (&peer->dsu, dsu));
+                return peer;
 	}
 	return NULL;
 }
@@ -440,7 +434,11 @@ int misaka_start_success ( struct peer *peer )
         
         //update time
         peer_uptime_reset(peer);
-	
+
+        //register this peer
+        peer_register(peer);
+
+        //set link nonblock
         if(set_nonblocking(peer->fd) <0 ){                          
             mlog_debug("set nonblock fail\n");
             if(peer->fd > 0){
@@ -452,18 +450,17 @@ int misaka_start_success ( struct peer *peer )
         //register read
         if(1 != ev_is_active(peer->t_read)){
             ev_io_init(peer->t_read, misaka_read, peer->fd, EV_READ);
-            peer->t_read->data = peer;
+            peer->t_read->data = peer; 
     	    ev_io_start(peer->loop, peer->t_read);
     	}
 
-    	//register send event if stream in send fifo
+    	//register write when packeted in fifo
         if(misaka_write_proceed(peer->obuf)){
             if(peer->status == TAT_ESTA && 1 != ev_is_active(peer->t_write))
                 ev_io_init(peer->t_write, misaka_write, peer->fd, EV_WRITE);
                 peer->t_read->data = peer;
                 ev_io_start(peer->loop, peer->t_write);
         }
-
     	return 0;
 }
 
@@ -471,27 +468,29 @@ int misaka_start_success ( struct peer *peer )
 int misaka_start_progress ( struct peer *peer )
 {
         mlog_debug("bgs connect progress\n");
-  	peer->status = TAT_IDLE;		    //set establish flag
+  	//set establish flag
+  	peer->status = TAT_IDLE;		    
         
         //update time
         peer_uptime_reset(peer);
 	
+	//set peer as nonblock
         if(set_nonblocking(peer->fd) <0 ){                             
                     if(peer->fd > 0)
                         close(peer->fd);
                     peer->fd = 0;
         }
         
+        //register read trigger
         if(1 != ev_is_active(peer->t_read)){
                 ev_io_init(peer->t_read, misaka_read, peer->fd, EV_READ);
                 peer->t_read->data = peer;
                 ev_io_start(peer->loop, peer->t_read);
         }
-
     	return 0;
 }
 
-//callback connect return status 
+//connect status check
 void connect_status_trigger(int status, struct peer *peer){
         switch ( status )
     	{
@@ -519,17 +518,13 @@ void misaka_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int e
 {
 	int status;
 	struct peer *peer;
-        
         peer = (struct peer *)handle->data;
-
         if(NULL == peer)
-                return;
-
+            return;
   	if (peer->status == TAT_ESTA)
         {
-      		return;
+      	    return;
         }
-
 	status = peer->start ( peer );
         connect_status_trigger(status , peer);
     	return ;
@@ -537,10 +532,11 @@ void misaka_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int e
 
 //entry to active peer
 int misaka_start(struct peer *peer){
-        if(peer->quick){                //not connect, just build
+        if(peer->quick){                
+            //not connect, just init peer
             misaka_start_success(peer);
         }else{
-            //init timer here
+            //init connect timer here
 	    peer->t_connect  = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
 	    if(!peer->t_connect)
 	        return -1;
@@ -552,13 +548,13 @@ int misaka_start(struct peer *peer){
         return 0;
 }
 
-/* Is there partially written packet or updates we can send right now.  */
+//Is there partially written packet or updates we can send right now.  
 int misaka_write_proceed(struct stream_fifo *obuf)
 {
         return ( stream_fifo_head(obuf) ? 1 : 0 );
 }
 
-/* get packet from write fifo*/
+//get packet from write fifo
 struct stream* misaka_write_packet(struct stream_fifo *obuf)
 {
 	struct stream* s = NULL;
@@ -570,7 +566,7 @@ struct stream* misaka_write_packet(struct stream_fifo *obuf)
 	return NULL;
 }
 
-/* Write packet to the peer. */
+//write packet to the peer. 
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
 {
 	struct peer *peer;
@@ -581,7 +577,6 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
   	if(!peer){
   	    mlog_debug("get empty peer from misaka_write\n");
   	    return;
-  	    
   	}
 
         //mlog_debug("peer %d write is active %d\n", peer->drole, ev_is_active(peer->t_read));
@@ -594,7 +589,7 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
 
         //record tot send packet
         count = peer->write(peer);  
-        
+
         if(count < 0){
             mlog_debug("peer fd %d close in write process\n", peer->fd);
 	    
@@ -608,6 +603,8 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
 	    }
             return;
         }
+
+  	mlog_debug("bgs write to peer fd %d!\n", peer->fd);
 
         peer->scount += count;
 
@@ -629,7 +626,6 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
 //read io end, and choose action to process
 int read_io_action(int event, struct peer *peer){
     static int tot = 0;
-
     struct stream *s = NULL;
     struct stream *rs = NULL;
     int ret = event;
@@ -639,32 +635,30 @@ int read_io_action(int event, struct peer *peer){
     switch(ret){
         case IO_PACKET:
             s->flag = 0;   //mark as unused
-            
             //@TODO redir for echoserver test
 #if 1
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
-
             mlog_debug("io packet trigger\n");
             //send to it itsself, stolen it and push into queue
             if(s->dst == misaka_config.role){
-                    rs = stream_clone_one(s);
-                    mlog_debug("thread route packet prepare\n");
-                    if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
-                    {
-                        mlog_debug("task route packet start\n");
-                        misaka_packet_task_route(rs);  
-                    }
-                    stream_reset(s);
+                rs = stream_clone_one(s);
+                mlog_debug("thread route packet prepare\n");
+                if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
+                {
+                    mlog_debug("task route packet start\n");
+                    misaka_packet_task_route(rs);  
+                }
             }else{  
-            //to others, just route it
-                    rs = stream_clone_one(s);
-                    if(rs){
-                        misaka_packet_route(rs);
-                    }
-                    stream_reset(s);
+                //to others, just route it
+                rs = stream_clone_one(s);
+                if(rs){
+                    //route packet
+                    misaka_packet_route(rs);
+                }
             }
+            stream_reset(s);
             break;
         case IO_PARTIAL: 
             break;
@@ -703,7 +697,6 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
     int ret = 0;
     struct stream *s  = NULL;
     struct peer* peer;
-    
     //get peer handle
     peer = (struct peer *)handle->data;
 
@@ -727,14 +720,12 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
 
     //check packet by unpack
     if(ret == IO_CHECK){
-
         s = peer->ibuf;
         if(peer->unpack){
             ret = peer->unpack(s, peer);
         }else{
             ret = IO_PACKET;
         }
-
         //connect in progress support
         if(peer->status != TAT_ESTA){
             
@@ -759,15 +750,11 @@ struct stream *  misaka_packet_process(struct stream *s)
 {
     struct stream *curr = NULL;
     struct stream *t = NULL;
-	
     struct event_handle* handle;
     struct listnode* nn;
     int type;
-
     type = s->type;
 
-    //mlog_debug("packet process\n");
-    //dump_packet(s);
     if(type <= EVENT_NONE || type >= EVENT_NET)
             return NULL;
 
@@ -778,11 +765,23 @@ struct stream *  misaka_packet_process(struct stream *s)
             if(handle->func){
                     handle->func(s);
             }
+
+            switch(s->type){
+                case EVENT_NET:
+                    misaka_packet_net_route(s);
+                    break;
+                case EVENT_NONE:
+                    stream_free(s);
+                    break;
+                default:
+                    misaka_packet_task_route(s);
+                    break;
+            }
     }
     return NULL;
 }
 
-/*packet where to route to*/
+//packet where to route to
 int misaka_packet_route(struct stream *s){
     struct peer *peer = NULL;
     struct peer p;
@@ -833,12 +832,10 @@ int misaka_packet_route(struct stream *s){
 //route into queue and call thread
 struct stream * misaka_packet_task_route(struct stream *s){
     struct message_queue *q;
-    int status;
     int type = s->type;
     q = queues[type];
     skynet_mq_push(q, &s);
     
-    //try to start one thread
     //@TODO better policy
     thpool_add_work(misaka_servant.thpool, worker, NULL);
     return NULL;
@@ -847,8 +844,19 @@ struct stream * misaka_packet_task_route(struct stream *s){
 //route task out packet into queue, before send it
 struct stream * misaka_packet_net_route(struct stream *s){
     struct message_queue *q;
-    int status;
+    s->type = EVENT_NET;
     q = queues[EVENT_NET];
+    //mark as 1, never push into global queue!!
+    skynet_mq_global(q, 1);
+    skynet_mq_push(q, &s);
+    return NULL;
+}
+
+//route task out packet into queue, before send it
+struct stream * misaka_packet_timer_route(struct stream *s){
+    struct message_queue *q;
+    s->type = EVENT_TIMER;
+    q = queues[EVENT_TIMER];
     //mark as 1, never push into global queue!!
     skynet_mq_global(q, 1);
     skynet_mq_push(q, &s);
@@ -858,6 +866,11 @@ struct stream * misaka_packet_net_route(struct stream *s){
 //look route packet
 void misaka_packet_loop_route(void){
     int sands = 5;
+    struct stream *rs;
+
+    struct listnode *nn;
+    struct peer *dpeer; 
+
     int type = EVENT_NET;
     struct stream *s;
     struct message_queue *q;
@@ -867,41 +880,105 @@ void misaka_packet_loop_route(void){
     }
 }
 
+//look get timer
+void misaka_packet_loop_timer(void){
+    int sands = 5;
+    int type = EVENT_TIMER;
+    struct stream *s;
+    struct message_queue *q;
+    q = queues[type];
+    for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
+            //TODO timer action
+    }
+}
+
 //register task for evnet
-int misaka_register_evnet( void (*func)(struct stream *), int type){
-    struct event_handle *handle = (struct event_handle *)malloc(sizeof(struct event_handle));
-    if(NULL==handle){
+int misaka_register_event(int type){
+    //get event handle
+    void *thandle;
+    struct event_handle *handle = &events[type];
+    if(NULL == handle){
         mlog_debug("alloc handle for callback fail\n");
         return -1;
     }
-    if(type <= EVENT_NONE || type >= EVENT_MAX)
-            return -1;
-    handle->func = func;
+    //check event handle type
+    if(type < EVENT_NONE || type >= EVENT_MAX)
+        return -1;
+
+    //set handle type
     handle->type = type;
+
+    //register api
+    switch(handle->plug){
+        case NONE_PLUGIN_TYPE:
+            return 0;
+        case C_PLUGIN_TYPE:
+            {
+                thandle = dlopen(handle->path, RTLD_NOW);
+                if(!thandle){
+                    mlog_debug("open so in path %s fail\n", handle->path);
+                    return -1;
+                }
+
+                handle->func   = (void (*)(struct stream *))dlsym(thandle, "handle");
+                handle->init   = (int(*)(void))dlsym(thandle, "init");
+                handle->deinit = (int(*)(void))dlsym(thandle, "deinit");
+
+                if( !handle->init || !handle->deinit|| !handle->deinit){
+                    dlclose(handle);    
+                    return -1;
+                }
+            }
+            break;
+        case LUA_PLUGIN_TYPE:
+            break;
+        default:
+            return -1;
+            break;
+    }
     listnode_add(misaka_servant.event_list, handle);
-    events[type] = handle;
     return 0;
 }
 
 //watch bgs status
 void misaka_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int events){
-	struct peer* peer;
-	struct listnode* nn;
-
-        mlog_debug("##################################Watch#####################\n");
-	LIST_LOOP(misaka_servant.peer_list, peer, nn)
-	{
-	        peer_dump(peer);
-	        mlog_debug("\n");
-	}
+    struct peer* peer;
+    struct listnode* nn;
+    mlog_debug("##################################Watch#####################\n");
+    LIST_LOOP(misaka_servant.peer_list, peer, nn)
+    {
+        peer_dump(peer);
+        mlog_debug("\n");
+    }
 }
-
 
 //watch bgs status
 void misaka_loop_watch(struct ev_loop *loop, struct ev_periodic *handle, int events){
     misaka_packet_loop_route();
 }
 
+//watch bgs status
+void misaka_loop_old(struct ev_loop *loop, struct ev_periodic *handle, int events){
+        struct peer* peer; 
+   	struct listnode* nn; 
+        mlog_debug("try to old all link\n");
+        //TODO better old function for user
+        LIST_LOOP(misaka_servant.peer_list, peer, nn)
+	{
+	        if(!peer)
+	            continue;
+
+	        if(peer->old == 0)
+	            continue;
+
+	        if(peer_old_time(peer->uptime, 0)){
+	            //delete old timer
+	            peer_unregister(peer);
+	            peer_delete(peer);
+	        }
+	        mlog_debug("\n");
+	}
+}
 
 //init core 
 int core_init(void)
@@ -912,6 +989,8 @@ int core_init(void)
     	//ignore pipe
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
+
+        memset(events, 0, sizeof(events));
 
    	misaka_servant.loop = ev_default_loop(0);
 
@@ -955,25 +1034,45 @@ int core_init(void)
 	if(!misaka_servant.thpool)
 	    return -1;
 	
+	//init watch timer
 	misaka_servant.t_watch = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
-	
         ev_periodic_init(misaka_servant.t_watch, misaka_loop_watch, \
                 fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_watch);
 	
+	//init old timer
+	misaka_servant.t_old = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
+        ev_periodic_init(misaka_servant.t_old, misaka_loop_old, \
+                fmod (ev_now (misaka_servant.loop), OLD_INTERVAL), OLD_INTERVAL, 0);
+        //ev_periodic_start(misaka_servant.loop, misaka_servant.t_old);
+
 	if(!misaka_servant.t_watch)
 	    return -1;
+
 	misaka_servant.t_watch->data = &misaka_servant;
-  	
+  	misaka_servant.t_old->data   = &misaka_servant;
+
   	return 0;
 }
 
 //core run here
 int core_run(){
-        mlog_info("proxy start\n");
+        int i;
+        int ret;
+        mlog_info("misaka start\n");
+        
+        //register all event
+        for (i = 0; i < EVENT_MAX; i++){
+            ret = misaka_register_event(i);
+            if(ret < 0){
+                mlog_info("register api %d fail with plugin %d\n", i, events[i].plug);
+                return -1;
+            }   
+        }
+
 	while(1){
 	    ev_loop(misaka_servant.loop, 0);
 	}
-        mlog_info("proxy stop\n");
+        mlog_info("misaka stop\n");
         return 0;
 }

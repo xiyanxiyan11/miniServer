@@ -1,39 +1,25 @@
 #include "link.h"
 #include "task.h"
+#include "misaka.h"
 #include <sys/time.h>
 #include <math.h>
 
-static int peerid = 100;
-
-//echo unpack
-int echo_unpack(struct stream *s, struct peer *peer)
-{
-    //new peer, mark peer when first packet come 
-    if(NULL == s){
-        mlog_debug("register new tcp peer as %d\n", peerid);
-        peer->drole = peerid++;
-        peer_register(peer);
-    }else{
-    
-    }
-    return IO_PACKET;
-}
-
-//echo pack
-int  echo_pack(struct stream *s, struct peer *peer)
-{
-    return IO_PACKET;
-}
+static int peer_id = 0;
 
 //echo event, send this  packet back
-void echo_event(struct stream *s)
+void handle(struct stream *s)
 {
-    stream_dir_exchange(s);
-    //mark route into net queue
-    misaka_packet_net_route(s);
+    int tmp;
+    tmp = s->src;
+    s->src = s->dst;
+    s->dst = s->src;
+    s->type = EVENT_NET;
 }
 
-int echo_register(void){
-    misaka_register_evnet(echo_event, EVENT_ECHO);
+int init(void){
+    return 0;
+}
+
+int deinit(void){
     return 0;
 }

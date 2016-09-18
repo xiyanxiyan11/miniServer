@@ -23,6 +23,10 @@
 #include "pub.h"
 #include "msg.h"
 
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+
 #define	MISAKA_UPTIME_LEN	               25
 #define MISAKA_MAX_QUEUE_PACKET                12
 #define	MISAKA_WRITE_PACKET_MAX	               30
@@ -36,7 +40,7 @@
 #define MISAKA_MAX_DATA                        (MISAKA_MAX_STREAM)
 
 //support thread
-#define MISAKA_THREAD_NUM                        (4)
+#define MISAKA_THREAD_NUM                        (1)
 #define MISAKA_THREAD_SUPPORT                    (1)
 #define MISAKA_THREAD_SANDS                      (16)
 
@@ -102,7 +106,8 @@ enum IO_TAT{
 #define DISTRIBUTE_INTERVAL			 (0.001)
 #define DISPATCH_INTERVAL			 (0.001)
 #define WATCH_INTERVAL                           (0.001)
-#define PEER_OLD_TIME                            (3)
+#define OLD_INTERVAL                             (1)
+#define PEER_OLD_TIME                            (15)
 
 /* bgs peer information*/
 struct peer{
@@ -118,8 +123,9 @@ struct peer{
 	struct sockaddr_un ldsu;             /*area local udp*/  
 
 	unsigned short port;                 /* Destination port for peer */
-	char path[MISAKA_PATH_SIZE];	     //path buffer used for device
+	char path[MISAKA_PATH_SIZE];	     /*path buffer used for device */
 
+        int old;                             /*mark when old function needed*/
   	int type;                   	     /*peer type*/
 	int status;			     /*peer status*/
 	int len;                             /*payload len*/
@@ -152,6 +158,8 @@ struct peer{
         int ( *read)   (struct peer *peer);                         //read handle
         int ( *unpack) (struct stream *s, struct peer *peer);       //unpack handle
         int ( *pack)   (struct stream *s, struct peer *peer);       //pack handle
+        int ( *on_connect) (struct peer *peer);                     //trigger when connected
+        int ( *on_disconnect) (struct peer *peer);                  //trigger when disconnected
 
 	/* Whole packet size to be read. */
 	unsigned long packet_size;
@@ -188,29 +196,41 @@ struct global_servant{
     struct ev_loop *loop;
 
     //task out
-    struct task_list *task_out;              /*dispatch message wait to send*/
+    struct task_list *task_out;                 /*dispatch message wait to send*/
 
-    struct thpool_ *thpool;                  /*thread pool*/
+    struct thpool_ *thpool;                     /*thread pool*/
     
-    struct ev_periodic *t_distpatch;         /*distpatch msg thread*/ 
+    struct ev_periodic *t_distpatch;            /*distpatch msg thread*/ 
     
-    struct ev_periodic *t_watch;             /*watch the bgs status*/
+    struct ev_periodic *t_watch;                /*watch the bgs status*/
+    
+    struct ev_periodic *t_old;                  /*old link*/
+
+    lua_State *L;
 
     struct shmhandle *shm;           
-    struct kmem *kmem;                       /*manager all mem*/
-    struct kmem_cache *peer_cache;           /*manager all peer cache*/ 
-    struct kmem_cache *stream_cache;         /*manager all stream cache*/
-    struct kmem_cache *data_cache;           /*manager all data in cache*/
-    struct kmem_cache *fifo_cache;           /*manager all fifo in cache*/
+    struct kmem *kmem;                          /*manager all mem*/
+    struct kmem_cache *peer_cache;              /*manager all peer cache*/ 
+    struct kmem_cache *stream_cache;            /*manager all stream cache*/
+    struct kmem_cache *data_cache;              /*manager all data in cache*/
+    struct kmem_cache *fifo_cache;              /*manager all fifo in cache*/
 };
 
+//plugin type
+enum PLUGIN_TYPE{
+    NONE_PLUGIN_TYPE = 0,                       //none plugin type
+    C_PLUGIN_TYPE,                              //plugin for c
+    LUA_PLUGIN_TYPE,                            //plugin for lua
+}; 
 
 //event handle 
 struct event_handle{
-    char path[MISAKA_PATH_SIZE];    //lib path for event handle
-    void (*func)(struct stream *);  //call back function register
-    int type;                       //event type
-    int plug;                       //hot plug flag
+    char path[MISAKA_PATH_SIZE];                //lib path for event handle
+    void (*func)(struct stream *);   //call back function register
+    int (*init)(void);                          //init callback handle
+    int (*deinit)(void);                        //deinit callback handle
+    int type;                                   //event type
+    int plug;                                   //plug type
 }event_handle_t;
 
 //date time structure
@@ -240,7 +260,7 @@ struct peer* peer_new(void);
 char *peer_uptime (time_t uptime2, char *buf, size_t len, int type);
 int misaka_packet_route(struct stream *s);
 void misaka_packet_delete(struct stream_fifo* obuf);
-extern int misaka_register_evnet( void (*func)(struct stream *), int type);
+extern int misaka_register_evnet(int type);
 extern struct stream  *stream_dclone(struct stream *s);
 extern struct stream  *stream_clone(struct stream *s);
 extern void stream_free (struct stream *s);
@@ -254,6 +274,8 @@ extern struct stream * misaka_packet_net_route(struct stream *s);
 extern struct stream * misaka_packet_task_route(struct stream *s);
 extern struct stream* misaka_write_packet(struct stream_fifo *obuf);
 extern void misaka_packet_loop_route(void);
+extern int register_c_event(const char *path, int type);
+
 
 enum event_status{
     EVENT_STOP = 0,
