@@ -43,6 +43,7 @@ struct stream * misaka_packet_process(struct stream *s);
 struct stream * misaka_packet_task_route(struct stream *s);
 void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
+struct stream * misaka_packet_sys_route(struct stream *s);
 
 struct event_handle events[EVENT_MAX];      //events callback
 struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
@@ -665,9 +666,10 @@ int read_io_action(int event, struct peer *peer){
                     
                     //here system manager packet here!!!
                     if(peer->sys){
-                        rs->type = EVENT_SYS;
+                        misaka_packet_sys_route(rs);
+                    }else{
+                        misaka_packet_task_route(rs);  
                     }
-                    misaka_packet_task_route(rs);  
                 }
             }else{  
                 //to others, just route it
@@ -872,9 +874,9 @@ struct stream * misaka_packet_net_route(struct stream *s){
 }
 
 //route task out packet into queue, before send it
-struct stream * misaka_packet_timer_route(struct stream *s){
+struct stream * misaka_packet_sys_route(struct stream *s){
     struct message_queue *q;
-    //mark as 1, never push into global queue!!
+    s->type = EVENT_SYS;
     skynet_mq_global(q, 1);
     skynet_mq_push(q, &s);
     return NULL;
