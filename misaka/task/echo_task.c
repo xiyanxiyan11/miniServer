@@ -7,7 +7,7 @@
 static int peer_id = 0;
 
 //echo event, send this  packet back
-void handle(struct stream *s)
+void misaka_handle(struct stream *s)
 {
     int tmp;
     tmp = s->src;
@@ -16,10 +16,21 @@ void handle(struct stream *s)
     s->type = EVENT_NET;
 }
 
-int init(void){
+int misaka_connect(struct peer *p)
+{
+    //p->drole = ++peer_id;
     return 0;
 }
 
-int deinit(void){
+int misaka_disconnect(struct peer *p)
+{
+    return 0;
+}
+
+int misaka_init(void){
+    return 0;
+}
+
+int misaka_deinit(void){
     return 0;
 }

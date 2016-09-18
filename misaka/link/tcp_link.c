@@ -109,6 +109,8 @@ int tcp_accept(struct peer *peer){
         //trance pack and unpack to the passive peer
         cpeer->pack = peer->pack;
         cpeer->unpack = peer->unpack;
+        cpeer->on_connect = peer->on_connect;
+        cpeer->on_disconnect = peer->on_disconnect;
 
         //trans packet_size attribute to passive peer
         cpeer->packet_size = peer->packet_size;

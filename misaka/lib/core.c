@@ -15,6 +15,8 @@ struct global_config misaka_config;    //local config handle
 //handle manger
 struct global_servant misaka_servant;  //local servant handle    
 
+static int peer_id = 0;
+
 int misaka_start_jitter ( int time );
 char *peer_uptime (time_t uptime2, char *buf, size_t len,int type);
 int peer_old_time (time_t uptime2, int type);
@@ -99,9 +101,16 @@ void *peer_hashalloc_func(void *data){
 
 //register peer key val
 void peer_register(struct peer *peer){
+    struct event_handle *handle;
+    struct listnode* nn; 
+    peer->drole = ++peer_id;
     //trigger when connected, usr must set peer id
     if (peer->on_connect){
-        peer->on_connect(peer);
+	LIST_LOOP(misaka_servant.event_list , handle, nn)
+	{
+	    mlog_debug("register handle %d create peer %d\n", handle->type, peer->drole);
+	    handle->connect(peer);
+	}
     }
     hash_get(misaka_servant.peer_hash, (void *)peer, peer_hashalloc_func);
 }
@@ -109,8 +118,13 @@ void peer_register(struct peer *peer){
 //unregister peer key val
 void peer_unregister(struct peer *peer){
     //trigger on disconnect
-    if(peer->on_disconnect){
-        peer->on_disconnect(peer);
+    struct event_handle *handle;
+    struct listnode* nn; 
+    if (peer->on_disconnect){
+	LIST_LOOP(misaka_servant.event_list, handle, nn)
+	{
+	    handle->disconnect(peer);
+	}
     }
     hash_release(misaka_servant.peer_hash, (void *)peer);
 }
@@ -355,8 +369,8 @@ struct peer* peer_new()
         peer->stop  = NULL;
 	peer->unpack = peer_default_unpack;
 	peer->pack  =  peer_default_pack;
-	peer->on_connect = NULL;
-	peer->on_disconnect = NULL;
+	peer->on_connect = 0;
+	peer->on_disconnect = 0;
 
         peer->quick = 0;
         peer->reconnect = 0;
@@ -803,7 +817,7 @@ int misaka_packet_route(struct stream *s){
     
     //drop it
     if(!peer){  
-        mlog_debug("packet to unknown peer\n");
+        mlog_debug("packet to unknown peer %d\n", s->dst);
         stream_free(s);
         return -1;
     }
@@ -919,12 +933,12 @@ int misaka_register_event(int type){
                     mlog_debug("open so in path %s fail\n", handle->path);
                     return -1;
                 }
-
-                handle->func   = (void (*)(struct stream *))dlsym(thandle, "handle");
-                handle->init   = (int(*)(void))dlsym(thandle, "init");
-                handle->deinit = (int(*)(void))dlsym(thandle, "deinit");
-
-                if( !handle->init || !handle->deinit|| !handle->deinit){
+                handle->func   = (void (*)(struct stream *))dlsym(thandle, "misaka_handle");
+                handle->init   = (int(*)(void))dlsym(thandle, "misaka_init");
+                handle->deinit = (int(*)(void))dlsym(thandle, "misaka_deinit");
+                handle->connect = (int(*)(struct peer *))dlsym(thandle, "misaka_connect");
+                handle->disconnect = (int(*)(struct peer *))dlsym(thandle, "misaka_disconnect");
+                if( !handle->init || !handle->deinit|| !handle->deinit || !handle->connect || !handle->disconnect){
                     dlclose(handle);    
                     return -1;
                 }
@@ -1026,7 +1040,7 @@ int core_init(void)
         skynet_mq_init();
 
         //create message queue 
-        for(i = 0; i <= EVENT_MAX; i++){
+        for(i = 0; i < EVENT_MAX; i++){
             queues[i] = skynet_mq_create(i);
         }
 

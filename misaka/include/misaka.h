@@ -158,8 +158,9 @@ struct peer{
         int ( *read)   (struct peer *peer);                         //read handle
         int ( *unpack) (struct stream *s, struct peer *peer);       //unpack handle
         int ( *pack)   (struct stream *s, struct peer *peer);       //pack handle
-        int ( *on_connect) (struct peer *peer);                     //trigger when connected
-        int ( *on_disconnect) (struct peer *peer);                  //trigger when disconnected
+        
+        int on_connect;
+        int on_disconnect;
 
 	/* Whole packet size to be read. */
 	unsigned long packet_size;
@@ -229,6 +230,8 @@ struct event_handle{
     void (*func)(struct stream *);   //call back function register
     int (*init)(void);                          //init callback handle
     int (*deinit)(void);                        //deinit callback handle
+    int (*connect)(struct peer *);              //deinit callback handle
+    int (*disconnect)(struct peer *);           //deinit callback handle
     int type;                                   //event type
     int plug;                                   //plug type
 }event_handle_t;

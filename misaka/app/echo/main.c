@@ -41,6 +41,8 @@ int core_register()
     peer = tcp_listen_init(TCP_DSTPORT);
     peer->listens = 3;
     peer->packet_size = 512;
+    peer->on_connect = 1;
+    peer->on_disconnect = 1;
     peer->role = ROLE_SERVER;
     peer->drole = ROLE_TCP;
     peer_register(peer);

@@ -24,10 +24,11 @@ struct stream
   int flag;             //you can read some thing here
   int src;              //where are you from
   int dst;              //to where
-  int hotplug;          //hot plug api, build by server, used to update api
-  int sync;             //packet process sync or not?
-
   int mark;             //mark for user     
+
+  int sid;              //id of this session
+  int seq;              //seq num
+  void *edata[EVENT_MAX];   //private data for every event
 
   /* Remainder is ***private*** to stream
    * direct access is frowned upon!
@@ -38,10 +39,6 @@ struct stream
   size_t size;		// size of data segment 
   unsigned char *data;  // data pointer
 
-  int sid;              //id of this session
-  int seq;              //seq num
-
-  void *pdata;          //private data as child of stream 
 };
 
 /* First in first out queue structure. */
