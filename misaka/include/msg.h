@@ -23,7 +23,6 @@ enum EVENT_TYPE{
     EVENT_ECHO,
     //system type
     EVENT_SYS,  
-    EVENT_TIMER,
     EVENT_NET,                              
     EVENT_MAX,
 };

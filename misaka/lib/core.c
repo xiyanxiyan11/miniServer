@@ -662,6 +662,11 @@ int read_io_action(int event, struct peer *peer){
                 if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
                 {
                     mlog_debug("task route packet start\n");
+                    
+                    //here system manager packet here!!!
+                    if(peer->sys){
+                        rs->type = EVENT_SYS;
+                    }
                     misaka_packet_task_route(rs);  
                 }
             }else{  
@@ -869,8 +874,6 @@ struct stream * misaka_packet_net_route(struct stream *s){
 //route task out packet into queue, before send it
 struct stream * misaka_packet_timer_route(struct stream *s){
     struct message_queue *q;
-    s->type = EVENT_TIMER;
-    q = queues[EVENT_TIMER];
     //mark as 1, never push into global queue!!
     skynet_mq_global(q, 1);
     skynet_mq_push(q, &s);
@@ -897,7 +900,7 @@ void misaka_packet_loop_route(void){
 //look get timer
 void misaka_packet_loop_timer(void){
     int sands = 5;
-    int type = EVENT_TIMER;
+    int type;
     struct stream *s;
     struct message_queue *q;
     q = queues[type];
@@ -907,14 +910,10 @@ void misaka_packet_loop_timer(void){
 }
 
 //register task for evnet
-int misaka_register_event(int type){
+int misaka_load_event(int type){
     //get event handle
     void *thandle;
     struct event_handle *handle = &events[type];
-    if(NULL == handle){
-        mlog_debug("alloc handle for callback fail\n");
-        return -1;
-    }
     //check event handle type
     if(type < EVENT_NONE || type >= EVENT_MAX)
         return -1;
@@ -939,9 +938,11 @@ int misaka_register_event(int type){
                 handle->connect = (int(*)(struct peer *))dlsym(thandle, "misaka_connect");
                 handle->disconnect = (int(*)(struct peer *))dlsym(thandle, "misaka_disconnect");
                 if( !handle->init || !handle->deinit|| !handle->deinit || !handle->connect || !handle->disconnect){
-                    dlclose(handle);    
+                    dlclose(thandle);  
+                    handle->chandle = NULL;
                     return -1;
                 }
+                handle->chandle = thandle;
             }
             break;
         case LUA_PLUGIN_TYPE:
@@ -951,6 +952,40 @@ int misaka_register_event(int type){
             break;
     }
     listnode_add(misaka_servant.event_list, handle);
+    return 0;
+}
+
+
+//register task for evnet
+int misaka_disload_event(int type){
+    //get event handle
+    struct event_handle *handle = &events[type];
+    //check event handle type
+    if(type < EVENT_NONE || type >= EVENT_MAX)
+        return -1;
+
+    //register api
+    switch(handle->plug){
+        case NONE_PLUGIN_TYPE:
+            return 0;
+        case C_PLUGIN_TYPE:
+            {
+                handle->func   = NULL;
+                handle->init   = NULL;
+                handle->deinit = NULL;
+                handle->connect = NULL;
+                handle->disconnect = NULL;
+                dlclose(handle->chandle);
+                handle->chandle = NULL;
+            }
+            break;
+        case LUA_PLUGIN_TYPE:
+            break;
+        default:
+            return -1;
+            break;
+    }
+    listnode_delete(misaka_servant.event_list, handle);
     return 0;
 }
 
@@ -1077,7 +1112,7 @@ int core_run(){
         
         //register all event
         for (i = 0; i < EVENT_MAX; i++){
-            ret = misaka_register_event(i);
+            ret = misaka_load_event(i);
             if(ret < 0){
                 mlog_info("register api %d fail with plugin %d\n", i, events[i].plug);
                 return -1;

@@ -135,6 +135,7 @@ struct peer{
         int drole;                           /*role of this*/
         int quick;                           /*start quick*/
         int reconnect;                       /*reconnect flag*/
+        int sys;                             /*system packet route into sys handle*/
 
         int listens;                         /*tot listen*/
 
@@ -232,6 +233,9 @@ struct event_handle{
     int (*deinit)(void);                        //deinit callback handle
     int (*connect)(struct peer *);              //deinit callback handle
     int (*disconnect)(struct peer *);           //deinit callback handle
+
+    void *chandle;                              //handle for c
+
     int type;                                   //event type
     int plug;                                   //plug type
 }event_handle_t;
