@@ -856,8 +856,6 @@ struct stream * misaka_packet_task_route(struct stream *s){
     int type = s->type;
     q = queues[type];
     skynet_mq_push(q, &s);
-    
-    //@TODO better policy
     thpool_add_work(misaka_servant.thpool, worker, NULL);
     return NULL;
 }
@@ -867,7 +865,6 @@ struct stream * misaka_packet_net_route(struct stream *s){
     struct message_queue *q;
     s->type = EVENT_NET;
     q = queues[EVENT_NET];
-    //mark as 1, never push into global queue!!
     skynet_mq_global(q, 1);
     skynet_mq_push(q, &s);
     return NULL;
