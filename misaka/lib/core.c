@@ -664,7 +664,7 @@ int read_io_action(int event, struct peer *peer){
                 {
                     mlog_debug("task route packet start\n");
                     
-                    //here system manager packet here!!!
+                    //system packet route here!!!
                     if(peer->sys){
                         misaka_packet_sys_route(rs);
                     }else{
@@ -1009,26 +1009,8 @@ void misaka_loop_watch(struct ev_loop *loop, struct ev_periodic *handle, int eve
 }
 
 //watch bgs status
-void misaka_loop_old(struct ev_loop *loop, struct ev_periodic *handle, int events){
-        struct peer* peer; 
-   	struct listnode* nn; 
-        mlog_debug("try to old all link\n");
-        //TODO better old function for user
-        LIST_LOOP(misaka_servant.peer_list, peer, nn)
-	{
-	        if(!peer)
-	            continue;
-
-	        if(peer->old == 0)
-	            continue;
-
-	        if(peer_old_time(peer->uptime, 0)){
-	            //delete old timer
-	            peer_unregister(peer);
-	            peer_delete(peer);
-	        }
-	        mlog_debug("\n");
-	}
+void misaka_loop_sys(struct ev_loop *loop, struct ev_periodic *handle, int events){
+        mlog_debug("try loop for sys\n");
 }
 
 //init core 
@@ -1091,9 +1073,9 @@ int core_init(void)
                 fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_watch);
 	
-	//init old timer
+	//init sys timer
 	misaka_servant.t_old = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
-        ev_periodic_init(misaka_servant.t_old, misaka_loop_old, \
+        ev_periodic_init(misaka_servant.t_old, misaka_loop_sys, \
                 fmod (ev_now (misaka_servant.loop), OLD_INTERVAL), OLD_INTERVAL, 0);
         //ev_periodic_start(misaka_servant.loop, misaka_servant.t_old);
 
