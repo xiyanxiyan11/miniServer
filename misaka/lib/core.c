@@ -993,7 +993,6 @@ int misaka_disload_event(int type){
 void misaka_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int events){
     struct peer* peer;
     struct listnode* nn;
-    mlog_debug("##################################Watch#####################\n");
     LIST_LOOP(misaka_servant.peer_list, peer, nn)
     {
         peer_dump(peer);
@@ -1108,8 +1107,6 @@ int core_run(){
 	while(1){
 	    ev_loop(misaka_servant.loop, 0);
 	}
-
-
 
         mlog_info("misaka stop\n");
         return 0;
