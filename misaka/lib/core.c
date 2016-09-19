@@ -491,9 +491,9 @@ int misaka_start_progress ( struct peer *peer )
 	
 	//set peer as nonblock
         if(set_nonblocking(peer->fd) <0 ){                             
-                    if(peer->fd > 0)
-                        close(peer->fd);
-                    peer->fd = 0;
+            if(peer->fd > 0)
+                close(peer->fd);
+            peer->fd = 0;
         }
         
         //register read trigger
@@ -809,8 +809,9 @@ int misaka_packet_route(struct stream *s){
     void *data;
     struct stream *rs, *ts, *tt;
 
-    if(!s)
+    if(!s){
         return 0;
+    }
 
     //ignore empty packet
     if(stream_get_endp(s) - stream_get_getp(s) == 0){
@@ -840,9 +841,9 @@ int misaka_packet_route(struct stream *s){
 
         stream_fifo_push (peer->obuf, tt);
         if(peer->status == TAT_ESTA && 1 != ev_is_active(peer->t_write)){
-                    ev_io_init(peer->t_write, misaka_write, peer->fd, EV_WRITE);
-                    peer->t_write->data = peer;
-                    ev_io_start(peer->loop, peer->t_write);
+                ev_io_init(peer->t_write, misaka_write, peer->fd, EV_WRITE);
+                peer->t_write->data = peer;
+                ev_io_start(peer->loop, peer->t_write);
         }else{
                 //mlog_debug("misaka_write peer %d in running in route!!!\n", peer->drole);
         }
@@ -1015,7 +1016,6 @@ int core_init(void)
 {
         int i;
         void *mem;
-    	
     	//ignore pipe
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
@@ -1075,7 +1075,7 @@ int core_init(void)
         ev_periodic_init(misaka_servant.t_watch, misaka_loop_watch, \
                 fmod (ev_now (misaka_servant.loop), WATCH_INTERVAL), WATCH_INTERVAL, 0);
         ev_periodic_start(misaka_servant.loop, misaka_servant.t_watch);
-	
+
 	//init sys timer
 	misaka_servant.t_old = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
         ev_periodic_init(misaka_servant.t_old, misaka_loop_sys, \
@@ -1087,7 +1087,6 @@ int core_init(void)
 
 	misaka_servant.t_watch->data = &misaka_servant;
   	misaka_servant.t_old->data   = &misaka_servant;
-
   	return 0;
 }
 
@@ -1097,7 +1096,7 @@ int core_run(){
         int ret;
         mlog_info("misaka start\n");
         
-        //register all event
+        //load all event
         for (i = 0; i < EVENT_MAX; i++){
             ret = misaka_load_event(i);
             if(ret < 0){
@@ -1109,6 +1108,9 @@ int core_run(){
 	while(1){
 	    ev_loop(misaka_servant.loop, 0);
 	}
+
+
+
         mlog_info("misaka stop\n");
         return 0;
 }
