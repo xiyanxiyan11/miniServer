@@ -17,6 +17,7 @@
 #include "hash.h"
 #include "thpool.h"
 #include "log.h"
+#include "idmaker.h"
 
 #include "spinlock.h"
 #include "kmem.h"
@@ -209,6 +210,8 @@ struct global_servant{
     struct ev_periodic *t_old;                  /*old link*/
 
     lua_State *L;
+
+    struct idmaker *mid;                        /*id maker used to allocate id*/
 
     struct shmhandle *shm;           
     struct kmem *kmem;                          /*manager all mem*/

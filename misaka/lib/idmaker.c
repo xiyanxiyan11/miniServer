@@ -31,7 +31,7 @@ int idmaker_put(struct idmaker *m, int i){
     return 0;
 }
 
-struct idmaker * idmaker_new(int start, int end){
+struct idmaker * idmaker_new(int start, int stop){
     struct idmaker *mid = (struct idmaker *)XMALLOC(MTYPE_MISAKA_MID, sizeof(struct idmaker));
     if(!mid){
         return NULL;
@@ -40,8 +40,8 @@ struct idmaker * idmaker_new(int start, int end){
     if(!mid->store){
         return NULL;
     }
-    idmaker->start = start;
-    idmaker->stop  = stop;
+    mid->start = start;
+    mid->stop  = stop;
     return mid;
 }
 

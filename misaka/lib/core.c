@@ -15,8 +15,6 @@ struct global_config misaka_config;    //local config handle
 //handle manger
 struct global_servant misaka_servant;  //local servant handle    
 
-static int peer_id = 0;
-
 int misaka_start_jitter ( int time );
 char *peer_uptime (time_t uptime2, char *buf, size_t len,int type);
 int peer_old_time (time_t uptime2, int type);
@@ -102,9 +100,10 @@ void *peer_hashalloc_func(void *data){
 
 //register peer key val
 void peer_register(struct peer *peer){
+    int flag;
     struct event_handle *handle;
     struct listnode* nn; 
-    peer->drole = ++peer_id;
+    peer->drole = idmaker_get(misaka_servant.mid, &flag);
     //trigger when connected, usr must set peer id
     if (peer->on_connect){
 	LIST_LOOP(misaka_servant.event_list , handle, nn)
@@ -121,6 +120,7 @@ void peer_unregister(struct peer *peer){
     //trigger on disconnect
     struct event_handle *handle;
     struct listnode* nn; 
+    idmaker_put(misaka_servant.mid, peer->drole);
     if (peer->on_disconnect){
 	LIST_LOOP(misaka_servant.event_list, handle, nn)
 	{
@@ -646,7 +646,7 @@ int read_io_action(int event, struct peer *peer){
     int ret = event;
     s = peer->ibuf;
     s->src = peer->drole;
-    mlog_debug("read io action trigger");
+    mlog_debug("read io action packet from %d\n", s->src);
     switch(ret){
         case IO_PACKET:
             s->flag = 0;   //mark as unused
@@ -1051,6 +1051,12 @@ int core_init(void)
 	}else{
 	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
+
+        misaka_servant.mid = idmaker_new(0, 999999);
+        if (!misaka_servant.mid){
+	    mlog_debug("Create id maker failed!\r\n");
+            return -1;
+        }
 
         //init global queue
         skynet_mq_init();

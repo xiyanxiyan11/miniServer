@@ -12,7 +12,7 @@ void misaka_handle(struct stream *s)
     int tmp;
     tmp = s->src;
     s->src = s->dst;
-    s->dst = s->src;
+    s->dst = tmp;
     s->type = EVENT_NET;
 }
 
