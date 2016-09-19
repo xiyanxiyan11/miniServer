@@ -52,5 +52,6 @@
  - 回复延迟平均900ms
 
 # AUTHOR 
-    hongwei mei
-    xiyanxiyan10@hotmail.com
+    - name: hongwei mei
+    - email:xiyanxiyan10@hotmail.com
+    - weixin: xiyanxiyan10
