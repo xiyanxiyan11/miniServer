@@ -71,7 +71,6 @@ void *worker(void *arg){
                 mlog_debug("thread start fail by empty queue pop!\n");
                 break;
             }
-
             handle = skynet_mq_handle(q);
             
             //TODO loadbalance policy
