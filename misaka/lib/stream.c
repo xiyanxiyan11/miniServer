@@ -142,10 +142,10 @@ stream_dup (struct stream *s)
 size_t
 stream_resize (struct stream *s, size_t newsize)
 {
-  u_char *newdata;
+  unsigned char *newdata;
   STREAM_VERIFY_SANE (s);
   
-  newdata = (u_char *)XREALLOC (MTYPE_STREAM_DATA, s->data, newsize);
+  newdata = (unsigned char *)XREALLOC (MTYPE_STREAM_DATA, s->data, newsize);
   
   if (newdata == NULL)
     return s->size;

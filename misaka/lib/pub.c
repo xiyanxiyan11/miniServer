@@ -16,8 +16,8 @@ void stream_dump(struct stream *s){
     mlog_debug("packet type %d\n",  s->type);
     mlog_debug("packet src  %d\n",  s->src);
     mlog_debug("packet dst  %d\n",  s->dst);
-    mlog_debug("packet getp %d\n",  s->getp);
-    mlog_debug("packet endp  %d\n", s->endp);
+    mlog_debug("packet getp %u\n",  (unsigned int)s->getp);
+    mlog_debug("packet endp  %u\n", (unsigned int)s->endp);
     sockunion_dump(&s->dsu);
 }
 
