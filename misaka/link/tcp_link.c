@@ -63,7 +63,7 @@ int tcp_read(struct peer* peer)
 	int close = 0;
 
   	nbytes = read(peer->fd, peer->ibuf->data, peer->packet_size);
-  	mlog_debug("%d bytes read from peer %d, drole %d\n", nbytes, peer->fd, peer->drole);
+  	//mlog_debug("%d bytes read from peer %d, drole %d\n", nbytes, peer->fd, peer->drole);
   	peer->ibuf->endp = nbytes;
 
   	/* If read byte is smaller than zero then error occured. */

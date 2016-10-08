@@ -46,11 +46,20 @@ struct stream * misaka_packet_sys_route(struct stream *s);
 struct event_handle events[EVENT_MAX];      //events callback
 struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
 
-//register api for c
+//register api from c
 int register_c_event(const char *path, int type){
     struct event_handle *handle = NULL;
     handle = &events[type];
     handle->plug = C_PLUGIN_TYPE;
+    snprintf(handle->path, MISAKA_PATH_SIZE, "%s", path);
+    return 0;
+}
+
+//register api from lua
+int register_lua_event(const char *path, int type){
+    struct event_handle *handle = NULL;
+    handle = &events[type];
+    handle->plug = LUA__PLUGIN_TYPE;
     snprintf(handle->path, MISAKA_PATH_SIZE, "%s", path);
     return 0;
 }
@@ -63,12 +72,12 @@ void *worker(void *arg){
     int sands;
     uint32_t handle;
 
-    mlog_debug("thread start!\n");
-    sands = 15;
+    //mlog_debug("thread start!\n");
+    sands = 3000;
     for(;;){
             q = skynet_globalmq_pop();
             if(!q){
-                mlog_debug("thread start fail by empty queue pop!\n");
+                //mlog_debug("thread start fail by empty queue pop!\n");
                 break;
             }
             handle = skynet_mq_handle(q);
@@ -76,18 +85,18 @@ void *worker(void *arg){
             //TODO loadbalance policy
             for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
                 if(handle != EVENT_NET){
-                    mlog_debug("thread active handle %d (task) success!\n", handle);
+                    //mlog_debug("thread active handle %d (task) success!\n", handle);
                     misaka_packet_process(s);
                 }else{
-                    mlog_debug("thread active handle %d (net) error!\n", handle);
+                    //mlog_debug("thread active handle %d (net) error!\n", handle);
                 }
             }
             if(0 == sands){
-                mlog_debug("thread stop by sands!\n");
+                //mlog_debug("thread stop by sands!\n");
                 skynet_globalmq_push(q);
                 break;
             }else{
-                mlog_debug("thread stop by empty pop!\n");
+                //mlog_debug("thread stop by empty pop!\n");
             }
     }
 }
@@ -481,7 +490,7 @@ int misaka_start_success ( struct peer *peer )
 //action when connect progress
 int misaka_start_progress ( struct peer *peer )
 {
-        mlog_debug("bgs connect progress\n");
+        //mlog_debug("bgs connect progress\n");
   	//set establish flag
   	peer->status = TAT_IDLE;		    
         
@@ -597,7 +606,7 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
   	//can't write when not connected
   	if (peer->status != TAT_ESTA)
         {
-  	        mlog_debug("bgs peer fd %d not establish active\n", peer->fd);
+  	        //mlog_debug("bgs peer fd %d not establish active\n", peer->fd);
       		return;
         }
 
@@ -605,7 +614,7 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
         count = peer->write(peer);  
 
         if(count < 0){
-            mlog_debug("peer fd %d close in write process\n", peer->fd);
+            //mlog_debug("peer fd %d close in write process\n", peer->fd);
 	    
 	    //peer not healthy
 	    if(peer->mode == MODE_PASSIVE){
@@ -618,7 +627,7 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
             return;
         }
 
-  	mlog_debug("bgs write to peer fd %d!\n", peer->fd);
+  	//mlog_debug("bgs write to peer fd %d!\n", peer->fd);
 
         peer->scount += count;
 
@@ -645,7 +654,7 @@ int read_io_action(int event, struct peer *peer){
     int ret = event;
     s = peer->ibuf;
     s->src = peer->drole;
-    mlog_debug("read io action packet from %d\n", s->src);
+    //mlog_debug("read io action packet from %d\n", s->src);
     switch(ret){
         case IO_PACKET:
             s->flag = 0;   //mark as unused
@@ -654,14 +663,14 @@ int read_io_action(int event, struct peer *peer){
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
-            mlog_debug("io packet trigger\n");
+            //mlog_debug("io packet trigger\n");
             //send to it itsself, stolen it and push into queue
             if(s->dst == misaka_config.role){
                 rs = stream_clone_one(s);
-                mlog_debug("thread route packet prepare\n");
+                //mlog_debug("thread route packet prepare\n");
                 if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
                 {
-                    mlog_debug("task route packet start\n");
+                    //mlog_debug("task route packet start\n");
                     
                     //system packet route here!!!
                     if(peer->sys){
@@ -696,7 +705,7 @@ int read_io_action(int event, struct peer *peer){
             misaka_reconnect(peer);
             break;
         case IO_PASSIVE_CLOSE:
-            mlog_debug("peer passive delete peer fd %d\n", peer->fd);
+            //mlog_debug("peer passive delete peer fd %d\n", peer->fd);
             //unregister peer in hash
             peer_unregister(peer);
             peer_delete(peer);
@@ -721,7 +730,7 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
     peer = (struct peer *)handle->data;
 
     if(NULL == peer){
-        mlog_debug("empty peer get from misaka_read\n");
+        //mlog_debug("empty peer get from misaka_read\n");
         return;
     }
 
@@ -782,8 +791,23 @@ struct stream *  misaka_packet_process(struct stream *s)
     {
             if(handle->type != type)
                     continue;
-            if(handle->func){
-                    handle->func(s);
+            
+            switch(handle->plug){
+                case C_PLUGIN_TYPE:
+                    if(handle->func){
+                        handle->func(s);
+                    }
+                    break;
+                case LUA_PLUGIN_TYPE:
+                    lua_getglobal(L, "func");
+                    lua_pushinteger(handle->lhandle, s->src);
+                    lua_pushinteger(handle->lhandle, s->dst);
+                    lua_pushstring(handle->lhandle, STREAM_PNT(s));
+                    lua_pcall(L, 3, 3, 0) != 0;
+                    //@TODO more func;
+                    break;
+                default:
+                    break;
             }
 
             switch(s->type){
@@ -912,6 +936,7 @@ void misaka_packet_loop_timer(void){
 int misaka_load_event(int type){
     //get event handle
     void *thandle;
+    lua_State *tlhandle = NULL;
     struct event_handle *handle = &events[type];
     //check event handle type
     if(type < EVENT_NONE || type >= EVENT_MAX)
@@ -945,6 +970,15 @@ int misaka_load_event(int type){
             }
             break;
         case LUA_PLUGIN_TYPE:
+            {
+                tlhandle = lua_open();
+                luaopen_base(tlhandle);
+                luaopen_io(tlhandle);
+                luaopen_string(tlhandle);
+                luaopen_math(tlhandle);
+                luaL_loadfile(tlhandle, handle->path);
+                handle->lhandle = thandle;
+            }
             break;
         default:
             return -1;
@@ -979,6 +1013,9 @@ int misaka_disload_event(int type){
             }
             break;
         case LUA_PLUGIN_TYPE:
+            {
+            
+            }
             break;
         default:
             return -1;

@@ -24,9 +24,9 @@
 #include "pub.h"
 #include "msg.h"
 
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
+//#include "lua.h"
+//#include "lualib.h"
+//#include "lauxlib.h"
 
 #define	MISAKA_UPTIME_LEN	               25
 #define MISAKA_MAX_QUEUE_PACKET                12
@@ -41,7 +41,7 @@
 #define MISAKA_MAX_DATA                        (MISAKA_MAX_STREAM)
 
 //support thread
-#define MISAKA_THREAD_NUM                        (1)
+#define MISAKA_THREAD_NUM                        (7)
 #define MISAKA_THREAD_SUPPORT                    (1)
 #define MISAKA_THREAD_SANDS                      (16)
 
@@ -209,7 +209,7 @@ struct global_servant{
     
     struct ev_periodic *t_old;                  /*old link*/
 
-    lua_State *L;
+    //lua_State *L;
 
     struct idmaker *mid;                        /*id maker used to allocate id*/
 
@@ -236,6 +236,8 @@ struct event_handle{
     int (*deinit)(void);                        //deinit callback handle
     int (*connect)(struct peer *);              //deinit callback handle
     int (*disconnect)(struct peer *);           //deinit callback handle
+    
+    lua_State *lhandle;                         //lua handle;
 
     void *chandle;                              //handle for c
 
