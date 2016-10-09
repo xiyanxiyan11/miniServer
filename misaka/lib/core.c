@@ -781,6 +781,8 @@ struct stream *  misaka_packet_process(struct stream *s)
     struct stream *t = NULL;
     struct event_handle* handle;
     struct listnode* nn;
+    const char *str;
+    int len;
     int type;
     type = s->type;
 
@@ -799,12 +801,26 @@ struct stream *  misaka_packet_process(struct stream *s)
                     }
                     break;
                 case LUA_PLUGIN_TYPE:
+                    //@TODO more func;
+                    //call function
                     lua_getglobal(L, "func");
+                    lua_pushinteger(handle->lhandle, s->type);
                     lua_pushinteger(handle->lhandle, s->src);
                     lua_pushinteger(handle->lhandle, s->dst);
                     lua_pushstring(handle->lhandle, STREAM_PNT(s));
-                    lua_pcall(L, 3, 3, 0) != 0;
-                    //@TODO more func;
+                    lua_pcall(L, 4, 4, 0) != 0;
+                    
+                    //get return val
+                    stream_reset(s);
+                    s->type = lua_tointeger(handle->lhandle, -1);
+                    lua_pop(handle->lhandle, 1);
+                    s->src = lua_tointeger(handle->lhandle,  -1);
+                    lua_pop(handle->lhandle, 1);
+                    s->dst = lua_tointeger(handle->lhandle,  -1);
+                    lua_pop(handle->lhandle, 1);
+                    str = lua_tolstring (handle->lhandle, &len);
+                    stream_put(s, (void*)str, len);
+                    lua_pop(handle->lhandle, 1);
                     break;
                 default:
                     break;
@@ -988,7 +1004,6 @@ int misaka_load_event(int type){
     return 0;
 }
 
-
 //register task for evnet
 int misaka_disload_event(int type){
     //get event handle
@@ -1014,7 +1029,7 @@ int misaka_disload_event(int type){
             break;
         case LUA_PLUGIN_TYPE:
             {
-            
+                 lua_close(handle->lhandle);
             }
             break;
         default:
