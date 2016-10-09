@@ -55,6 +55,7 @@
 #define MISAKA_DEFAULT_CONNECT_RETRY  	        30
 #define MISAKA_DEFAULT_SCAN_TIMER		15	    
 #define MISAKA_PATH_SIZE			128
+#define MISAKA_MAX_ID                           (99999)
 
 /* link status */
 enum MISAKA_TAT{

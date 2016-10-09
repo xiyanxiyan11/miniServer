@@ -1030,6 +1030,7 @@ int misaka_disload_event(int type){
         case LUA_PLUGIN_TYPE:
             {
                  lua_close(handle->lhandle);
+                 handle->lhandle = NULL;
             }
             break;
         default:
@@ -1102,7 +1103,7 @@ int core_init(void)
 	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
 
-        misaka_servant.mid = idmaker_new(0, 999999);
+        misaka_servant.mid = idmaker_new(0, MISAKA_THREAD_ID);
         if (!misaka_servant.mid){
 	    mlog_debug("Create id maker failed!\r\n");
             return -1;
