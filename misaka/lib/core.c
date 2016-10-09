@@ -951,7 +951,7 @@ void misaka_packet_loop_timer(void){
 //register task for evnet
 int misaka_load_event(int type){
     //get event handle
-    void *thandle;
+    void *tchandle;
     lua_State *tlhandle = NULL;
     struct event_handle *handle = &events[type];
     //check event handle type
@@ -967,22 +967,22 @@ int misaka_load_event(int type){
             return 0;
         case C_PLUGIN_TYPE:
             {
-                thandle = dlopen(handle->path, RTLD_NOW);
+                tchandle = dlopen(handle->path, RTLD_NOW);
                 if(!thandle){
                     mlog_debug("open so in path %s fail\n", handle->path);
                     return -1;
                 }
-                handle->func   = (void (*)(struct stream *))dlsym(thandle, "misaka_handle");
-                handle->init   = (int(*)(void))dlsym(thandle, "misaka_init");
-                handle->deinit = (int(*)(void))dlsym(thandle, "misaka_deinit");
-                handle->connect = (int(*)(struct peer *))dlsym(thandle, "misaka_connect");
-                handle->disconnect = (int(*)(struct peer *))dlsym(thandle, "misaka_disconnect");
+                handle->func   = (void (*)(struct stream *))dlsym(tchandle, "misaka_handle");
+                handle->init   = (int(*)(void))dlsym(tchandle, "misaka_init");
+                handle->deinit = (int(*)(void))dlsym(tchandle, "misaka_deinit");
+                handle->connect = (int(*)(struct peer *))dlsym(tchandle, "misaka_connect");
+                handle->disconnect = (int(*)(struct peer *))dlsym(tchandle, "misaka_disconnect");
                 if( !handle->init || !handle->deinit|| !handle->deinit || !handle->connect || !handle->disconnect){
-                    dlclose(thandle);  
+                    dlclose(tchandle);  
                     handle->chandle = NULL;
                     return -1;
                 }
-                handle->chandle = thandle;
+                handle->chandle = tchandle;
             }
             break;
         case LUA_PLUGIN_TYPE:
@@ -993,7 +993,7 @@ int misaka_load_event(int type){
                 luaopen_string(tlhandle);
                 luaopen_math(tlhandle);
                 luaL_loadfile(tlhandle, handle->path);
-                handle->lhandle = thandle;
+                handle->lhandle = tlhandle;
             }
             break;
         default:
