@@ -59,7 +59,7 @@ int register_c_event(const char *path, int type){
 int register_lua_event(const char *path, int type){
     struct event_handle *handle = NULL;
     handle = &events[type];
-    handle->plug = LUA__PLUGIN_TYPE;
+    handle->plug = LUA_PLUGIN_TYPE;
     snprintf(handle->path, MISAKA_PATH_SIZE, "%s", path);
     return 0;
 }
@@ -782,7 +782,7 @@ struct stream *  misaka_packet_process(struct stream *s)
     struct event_handle* handle;
     struct listnode* nn;
     const char *str;
-    int len;
+    size_t len;
     int type;
     type = s->type;
 
@@ -803,12 +803,12 @@ struct stream *  misaka_packet_process(struct stream *s)
                 case LUA_PLUGIN_TYPE:
                     //@TODO more func;
                     //call function
-                    lua_getglobal(L, "func");
+                    lua_getglobal(handle->lhandle, "func");
                     lua_pushinteger(handle->lhandle, s->type);
                     lua_pushinteger(handle->lhandle, s->src);
                     lua_pushinteger(handle->lhandle, s->dst);
                     lua_pushstring(handle->lhandle, STREAM_PNT(s));
-                    lua_pcall(L, 4, 4, 0) != 0;
+                    lua_pcall(handle->lhandle, 4, 4, 0) != 0;
                     
                     //get return val
                     stream_reset(s);
@@ -818,7 +818,7 @@ struct stream *  misaka_packet_process(struct stream *s)
                     lua_pop(handle->lhandle, 1);
                     s->dst = lua_tointeger(handle->lhandle,  -1);
                     lua_pop(handle->lhandle, 1);
-                    str = lua_tolstring (handle->lhandle, &len);
+                    str = lua_tolstring (handle->lhandle, -1, &len);
                     stream_put(s, (void*)str, len);
                     lua_pop(handle->lhandle, 1);
                     break;
@@ -968,7 +968,7 @@ int misaka_load_event(int type){
         case C_PLUGIN_TYPE:
             {
                 tchandle = dlopen(handle->path, RTLD_NOW);
-                if(!thandle){
+                if(!tchandle){
                     mlog_debug("open so in path %s fail\n", handle->path);
                     return -1;
                 }
@@ -1103,7 +1103,7 @@ int core_init(void)
 	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
 
-        misaka_servant.mid = idmaker_new(0, MISAKA_THREAD_ID);
+        misaka_servant.mid = idmaker_new(0, MISAKA_MAX_ID);
         if (!misaka_servant.mid){
 	    mlog_debug("Create id maker failed!\r\n");
             return -1;
