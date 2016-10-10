@@ -16,8 +16,8 @@ int core_register()
     SET_DEBUG(DEBUG_DEBUG);
 
     //register event
-    register_c_event("task/.libs/libecho.so", EVENT_ECHO);
-
+    //register_c_event("/tmp/task/.libs/libecho.so", EVENT_ECHO);
+    register_lua_event("/tmp/task-lua/echo.lua", EVENT_ECHO);
 
     misaka_config.role = ROLE_SERVER;
 //support support test

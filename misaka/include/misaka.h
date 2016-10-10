@@ -288,7 +288,7 @@ extern struct stream * misaka_packet_task_route(struct stream *s);
 extern struct stream* misaka_write_packet(struct stream_fifo *obuf);
 extern void misaka_packet_loop_route(void);
 extern int register_c_event(const char *path, int type);
-
+extern int register_lua_event(const char *path, int type);
 
 enum event_status{
     EVENT_STOP = 0,

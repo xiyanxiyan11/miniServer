@@ -117,7 +117,8 @@ void peer_register(struct peer *peer){
 	LIST_LOOP(misaka_servant.event_list , handle, nn)
 	{
 	    mlog_debug("register handle %d create peer %d\n", handle->type, peer->drole);
-	    handle->connect(peer);
+	    if(handle->connect)
+	        handle->connect(peer);
 	}
     }
     hash_get(misaka_servant.peer_hash, (void *)peer, peer_hashalloc_func);
@@ -132,7 +133,8 @@ void peer_unregister(struct peer *peer){
     if (peer->on_disconnect){
 	LIST_LOOP(misaka_servant.event_list, handle, nn)
 	{
-	    handle->disconnect(peer);
+	    if(handle->disconnect)
+	        handle->disconnect(peer);
 	}
     }
     hash_release(misaka_servant.peer_hash, (void *)peer);
@@ -802,28 +804,41 @@ struct stream *  misaka_packet_process(struct stream *s)
                     break;
 
                 case LUA_PLUGIN_TYPE:
+                    //mlog_info("action handle in lua!");
                     //@TODO more func;
+                    //mlog_info("lua call type %d\n", s->type);
+                    //mlog_info("lua call src %d\n", s->src);
+                    //mlog_info("lua call dst %d\n", s->dst);
                     //call function
                     lua_getglobal(handle->lhandle, "func");
                     lua_pushinteger(handle->lhandle, s->type);
                     lua_pushinteger(handle->lhandle, s->src);
                     lua_pushinteger(handle->lhandle, s->dst);
                     lua_pushstring(handle->lhandle, STREAM_PNT(s));
-                    lua_pcall(handle->lhandle, 4, 4, 0) != 0;
+
+                    //mlog_info("call lua start\n");
+                    lua_call(handle->lhandle, 4, 4);
+
+                    //mlog_info("call lua success\n");
                     
-                    //get return val
                     stream_reset(s);
-                    s->type = lua_tointeger(handle->lhandle, -1);
-                    lua_pop(handle->lhandle, 1);
-                    s->src = lua_tointeger(handle->lhandle,  -1);
-                    lua_pop(handle->lhandle, 1);
-                    s->dst = lua_tointeger(handle->lhandle,  -1);
-                    lua_pop(handle->lhandle, 1);
+
                     str = lua_tolstring (handle->lhandle, -1, &len);
                     stream_put(s, (void*)str, len);
                     lua_pop(handle->lhandle, 1);
-                    break;
 
+                    s->dst = lua_tointeger(handle->lhandle,  -1);
+                    //mlog_info("lua return dst %d\n", s->dst);
+                    lua_pop(handle->lhandle, 1);
+
+                    s->src = lua_tointeger(handle->lhandle,  -1);
+                    //mlog_info("lua return src %d\n", s->src);
+                    lua_pop(handle->lhandle, 1);
+                    
+                    s->type = lua_tointeger(handle->lhandle, -1);
+                    //mlog_info("lua return type %d\n", s->type);
+                    lua_pop(handle->lhandle, 1);
+                    break;
                 default:
                     break;
             }
@@ -990,12 +1005,21 @@ int misaka_load_event(int type){
         case LUA_PLUGIN_TYPE:
             {
                 tlhandle = lua_open();
+                
+                //open libs
+                luaL_openlibs(tlhandle); 
                 luaopen_base(tlhandle);
-                luaopen_io(tlhandle);
                 luaopen_string(tlhandle);
                 luaopen_math(tlhandle);
-                luaL_loadfile(tlhandle, handle->path);
+                
+                //open lua file
+                luaL_dofile(tlhandle, handle->path);
                 handle->lhandle = tlhandle;
+
+                handle->init   = NULL;      //lua init by lua
+                handle->deinit = NULL;
+                handle->connect = NULL;     //lua ignore connect and disconnect
+                handle->disconnect = NULL;
             }
             break;
         default:
