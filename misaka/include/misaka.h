@@ -24,17 +24,17 @@
 #include "pub.h"
 #include "msg.h"
 
-//#include "lua.h"
-//#include "lualib.h"
-//#include "lauxlib.h"
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
 
-#define	MISAKA_UPTIME_LEN	               25
-#define MISAKA_MAX_QUEUE_PACKET                12
-#define	MISAKA_WRITE_PACKET_MAX	               30
+#define	MISAKA_UPTIME_LEN	               (25)
+#define MISAKA_MAX_QUEUE_PACKET                (12)
+#define	MISAKA_WRITE_PACKET_MAX	               (30)
 
 #define MISAKA_MEM_SIZE                        (1024*1024 * 500)
-#define MISAKA_SHM_KEY                         1234
-#define MISAKA_MEM_ALIGN                       8
+#define MISAKA_SHM_KEY                         (1234)
+#define MISAKA_MEM_ALIGN                       (8)
 #define MISAKA_MAX_PEER                        (10000)
 #define MISAKA_MAX_STREAM                      (10000*6)
 #define MISAKA_MAX_FIFO                        (10000)
@@ -49,12 +49,12 @@
 //#define MISAKA_CACHE_SUPPORT                    1
 
 
-#define MISAKA_INIT_START_TIMER  		5
-#define MISAKA_DEFAULT_HOLDTIME               	180
-#define MISAKA_DEFAULT_KEEPALIVE              	60
-#define MISAKA_DEFAULT_CONNECT_RETRY  	        30
-#define MISAKA_DEFAULT_SCAN_TIMER		15	    
-#define MISAKA_PATH_SIZE			128
+#define MISAKA_INIT_START_TIMER  		(5)
+#define MISAKA_DEFAULT_HOLDTIME               	(180)
+#define MISAKA_DEFAULT_KEEPALIVE              	(60)
+#define MISAKA_DEFAULT_CONNECT_RETRY  	        (30)
+#define MISAKA_DEFAULT_SCAN_TIMER		(15)	    
+#define MISAKA_PATH_SIZE			(128)
 #define MISAKA_MAX_ID                           (99999)
 
 /* link status */
