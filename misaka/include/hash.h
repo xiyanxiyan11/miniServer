@@ -22,7 +22,7 @@ Boston, MA 02111-1307, USA.  */
 #define _ZEBRA_HASH_H
 
 /* Default hash table size.  */ 
-#define HASHTABSIZE     1024
+#define HASHTABSIZE     1024*10
 
 struct hash_backet
 {
