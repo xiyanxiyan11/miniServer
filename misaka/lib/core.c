@@ -800,6 +800,7 @@ struct stream *  misaka_packet_process(struct stream *s)
                         handle->func(s);
                     }
                     break;
+
                 case LUA_PLUGIN_TYPE:
                     //@TODO more func;
                     //call function
@@ -822,6 +823,7 @@ struct stream *  misaka_packet_process(struct stream *s)
                     stream_put(s, (void*)str, len);
                     lua_pop(handle->lhandle, 1);
                     break;
+
                 default:
                     break;
             }
