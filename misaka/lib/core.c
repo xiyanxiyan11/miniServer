@@ -805,7 +805,6 @@ struct stream *  misaka_packet_process(struct stream *s)
                     break;
 
                 case LUA_PLUGIN_TYPE:
-                    //@TODO error occured when data is too small;
                     //mlog_info("action handle in lua!");
                     //mlog_info("lua call type %d\n", s->type);
                     //mlog_info("lua call src %d\n", s->src);
