@@ -785,6 +785,7 @@ struct stream *  misaka_packet_process(struct stream *s)
     struct listnode* nn;
     const char *str;
     size_t len;
+    int ret;
     int type;
     type = s->type;
 
@@ -817,10 +818,14 @@ struct stream *  misaka_packet_process(struct stream *s)
                     lua_pushstring(handle->lhandle, STREAM_PNT(s));
 
                     //mlog_info("call lua start\n");
-                    lua_call(handle->lhandle, 4, 4);
-
-                    //mlog_info("call lua success\n");
+                    ret = lua_pcall(handle->lhandle, 4, 4, 0);
                     
+                    if(ret != 0){
+                        mlog_info("call lua fail\n");
+                        stream_reset(s);
+                        return s;
+                    }
+
                     stream_reset(s);
 
                     str = lua_tolstring (handle->lhandle, -1, &len);
