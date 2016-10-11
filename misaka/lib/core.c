@@ -811,7 +811,6 @@ struct stream *  misaka_packet_process(struct stream *s)
                     //mlog_info("lua call src %d\n", s->src);
                     //mlog_info("lua call dst %d\n", s->dst);
                     //call function
-                    lua_getglobal(handle->lhandle, "func");
                     lua_pushinteger(handle->lhandle, s->type);
                     lua_pushinteger(handle->lhandle, s->src);
                     lua_pushinteger(handle->lhandle, s->dst);
@@ -1020,6 +1019,7 @@ int misaka_load_event(int type){
                 //open lua file
                 luaL_dofile(tlhandle, handle->path);
                 handle->lhandle = tlhandle;
+                lua_getglobal(handle->lhandle, "func");
 
                 handle->init   = NULL;      //lua init by lua
                 handle->deinit = NULL;
