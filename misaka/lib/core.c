@@ -564,6 +564,27 @@ void misaka_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int e
     	return ;
 }
 
+
+//action when timer register
+void misaka_timer_thread(struct ev_loop *loop, struct ev_periodic *handle, int events)
+{
+	int status;
+	int tmp;
+	struct stream *s;
+        s = (struct stream *)handle->data;
+        if(NULL == s)
+            return;
+            
+        tmp = s->stype;
+        s->stype = s->type;
+        s->type = tmp;
+        
+        //route the packet to the task
+        misaka_packet_task_route(s);
+    	return ;
+}
+
+
 //entry to active peer
 int misaka_start(struct peer *peer){
         if(peer->quick){                
@@ -992,6 +1013,7 @@ void misaka_packet_loop_timer(void){
     int type;
     struct stream *s;
     struct message_queue *q;
+    type = EVENT_SYS;
     q = queues[type];
     for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
             //TODO timer action

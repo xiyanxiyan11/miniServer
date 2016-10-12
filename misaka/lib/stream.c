@@ -947,6 +947,7 @@ stream_color_one(struct stream *to, struct stream *from){
         to->mark= from->mark;         
         to->su   = from->su;
         to->dsu  = from->dsu;
+        to->stype = from->stype;
 }
 
 //clone one not in deep

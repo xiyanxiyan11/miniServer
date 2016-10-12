@@ -4,8 +4,6 @@
 #include <sys/time.h>
 #include <math.h>
 
-static int peer_id = 0;
-
 //echo event, send this  packet back
 void misaka_handle(struct stream *s)
 {

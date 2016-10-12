@@ -15,6 +15,7 @@ struct stream
   //union sockunion *dsu; //dst ip port
     
   int type;             //packet type
+  int stype;            //route in the server
 
   union sockunion su;	// Sockunion address of the peer
   union sockunion dsu;	// Sockunion address to connect
@@ -24,7 +25,10 @@ struct stream
   int flag;             //you can read some thing here
   int src;              //where are you from
   int dst;              //to where
-  int mark;             //mark for user     
+  int mark;             //mark for user 
+
+  int interval;         //used when as timer msg
+  int repeat;           //used when as timer msg
 
   int sid;              //id of this session
   int seq;              //seq num
