@@ -64,6 +64,15 @@ int register_lua_event(const char *path, int type){
     return 0;
 }
 
+//register api from lua
+int register_python_event(const char *path, int type){
+    struct event_handle *handle = NULL;
+    handle = &events[type];
+    handle->plug = PYTHON_PLUGIN_TYPE;
+    snprintf(handle->path, MISAKA_PATH_SIZE, "%s", path);
+    return 0;
+}
+
 //work used as thread handle for all event
 void *worker(void *arg){
     struct stream *s;
@@ -784,6 +793,7 @@ struct stream *  misaka_packet_process(struct stream *s)
     struct event_handle* handle;
     struct listnode* nn;
     const char *str;
+    char payload[MISAKA_MAX_PACKET_SIZE];
     size_t len;
     int ret;
     int type;
@@ -805,12 +815,14 @@ struct stream *  misaka_packet_process(struct stream *s)
                     break;
 
                 case LUA_PLUGIN_TYPE:
+                    {
+                    
                     //mlog_info("action handle in lua!");
                     //mlog_info("lua call type %d\n", s->type);
                     //mlog_info("lua call src %d\n", s->src);
                     //mlog_info("lua call dst %d\n", s->dst);
                     //call function
-                    lua_getglobal(handle->lhandle, "func");
+                    lua_getglobal(handle->lhandle, "misaka_handle");
                     lua_pushinteger(handle->lhandle, s->type);
                     lua_pushinteger(handle->lhandle, s->src);
                     lua_pushinteger(handle->lhandle, s->dst);
@@ -844,6 +856,21 @@ struct stream *  misaka_packet_process(struct stream *s)
                     s->type = lua_tointeger(handle->lhandle, -1);
                     //mlog_info("lua return type %d\n", s->type);
                     lua_pop(handle->lhandle, 1);
+                    }
+                    break;
+                case PYTHON_PLUGIN_TYPE:
+                    {
+                        PyObject * pyParams = PyTuple_New(4);
+                        PyTuple_SetItem(pyParams, 0, Py_BuildValue("i", s->type));
+                        PyTuple_SetItem(pyParams, 0, Py_BuildValue("i", s->src));
+                        PyTuple_SetItem(pyParams, 0, Py_BuildValue("i", s->dst));
+                        *(STREAM_PNT(s) + stream_get_endp(s)) = 0;
+                        PyTuple_SetItem(pyParams, 0, Py_BuildValue("s", STREAM_PNT(s)));
+                        PyObject * pyValue = PyObject_CallObject(handle->pFunc, pyParams);
+                        stream_reset(s);
+                        PyArg_ParseTuple(pyValue, "i|i|i|s", &s->type, &s->src, &s->dst, payload);
+                        stream_put(s, (void*)payload, strlen(payload) + 1);
+                    }
                     break;
                 default:
                     break;
@@ -975,6 +1002,7 @@ void misaka_packet_loop_timer(void){
 int misaka_load_event(int type){
     //get event handle
     void *tchandle;
+    int ret;
     lua_State *tlhandle = NULL;
     struct event_handle *handle = &events[type];
     //check event handle type
@@ -1006,6 +1034,9 @@ int misaka_load_event(int type){
                     return -1;
                 }
                 handle->chandle = tchandle;
+
+                handle->init();         
+                //handle->deinit();
             }
             break;
         case LUA_PLUGIN_TYPE:
@@ -1026,6 +1057,25 @@ int misaka_load_event(int type){
                 handle->deinit = NULL;
                 handle->connect = NULL;     //lua ignore connect and disconnect
                 handle->disconnect = NULL;
+
+                lua_getglobal(handle->lhandle, "misaka_init");
+                ret = lua_pcall(handle->lhandle, 0, 1, 0);
+                    
+                if(ret != 0){
+                        mlog_info("call lua init fail\n");
+                }
+                ret = lua_tointeger (handle->lhandle, -1);
+                lua_pop(handle->lhandle, 1);
+            }
+            break;
+        case PYTHON_PLUGIN_TYPE:
+            {
+                handle->pModule = PyImport_ImportModule(handle->path);
+                handle->pFunc = PyObject_GetAttrString(handle->pModule, "misaka_handle");
+                handle->pInit = PyObject_GetAttrString(handle->pModule, "misaka_init");
+                handle->pDeinit = PyObject_GetAttrString(handle->pModule, "misaka_deinit");
+                PyObject * pyValue = PyObject_CallObject(handle->pInit, NULL);
+                PyArg_ParseTuple(pyValue, "i", &ret);
             }
             break;
         default:
@@ -1063,6 +1113,11 @@ int misaka_disload_event(int type){
             {
                  lua_close(handle->lhandle);
                  handle->lhandle = NULL;
+            }
+            break;
+        case PYTHON_PLUGIN_TYPE:
+            {
+                //@TODO python handle close callback
             }
             break;
         default:
@@ -1178,6 +1233,7 @@ int core_run(){
         int i;
         int ret;
         mlog_info("misaka start\n");
+        Py_Initialize();
         
         //load all event
         for (i = 0; i < EVENT_MAX; i++){
@@ -1191,6 +1247,8 @@ int core_run(){
 	while(1){
 	    ev_loop(misaka_servant.loop, 0);
 	}
+
+	Py_Finalize();
 
         mlog_info("misaka stop\n");
         return 0;

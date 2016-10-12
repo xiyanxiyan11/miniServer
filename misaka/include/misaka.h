@@ -27,6 +27,7 @@
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
+#include "python2.7/Python.h"
 
 #define	MISAKA_UPTIME_LEN	               (25)
 #define MISAKA_MAX_QUEUE_PACKET                (12)
@@ -227,6 +228,8 @@ enum PLUGIN_TYPE{
     NONE_PLUGIN_TYPE = 0,                       //none plugin type
     C_PLUGIN_TYPE,                              //plugin for c
     LUA_PLUGIN_TYPE,                            //plugin for lua
+    PYTHON_PLUGIN_TYPE,                         //plugin for python
+    MAX_PLUGIN_TYPE,                            //plugin max
 }; 
 
 //event handle 
@@ -239,6 +242,11 @@ struct event_handle{
     int (*disconnect)(struct peer *);           //deinit callback handle
     
     lua_State *lhandle;                         //lua handle;
+
+    PyObject *pModule;                          //python module handle
+    PyObject *pFunc;                            //python func handle
+    PyObject *pInit;                            //python init handle
+    PyObject *pDeinit;                          //python deinit handle
 
     void *chandle;                              //handle for c
 
@@ -287,8 +295,10 @@ extern struct stream * misaka_packet_net_route(struct stream *s);
 extern struct stream * misaka_packet_task_route(struct stream *s);
 extern struct stream* misaka_write_packet(struct stream_fifo *obuf);
 extern void misaka_packet_loop_route(void);
+
 extern int register_c_event(const char *path, int type);
 extern int register_lua_event(const char *path, int type);
+extern int register_python_event(const char *path, int type);
 
 enum event_status{
     EVENT_STOP = 0,
