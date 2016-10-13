@@ -8,6 +8,7 @@
 #include "dlfcn.h"
 #include "skynet_mq.h"
 #include "msg.h"
+#include "timer.h"
 
 //config manger
 struct global_config misaka_config;    //local config handle
@@ -1011,17 +1012,20 @@ void misaka_packet_loop_route(void){
     }
 }
 
-//look get timer
+//look timer
 void misaka_packet_loop_timer(void){
-    int sands = 5;
+    int sands = 500;
     int type;
     struct stream *s;
     struct message_queue *q;
     type = EVENT_SYS;
     q = queues[type];
     for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
-            //TODO timer action
+        //try to register timer event 
+        server_timer_timeout(s->interval, s);
     }
+    //try to old all timer
+    server_timer_updatetime();
 }
 
 //register task for evnet
@@ -1202,15 +1206,15 @@ void misaka_loop_watch(struct ev_loop *loop, struct ev_periodic *handle, int eve
 
 //watch bgs status
 void misaka_loop_sys(struct ev_loop *loop, struct ev_periodic *handle, int events){
-        mlog_debug("try loop for sys\n");
+    misaka_packet_loop_timer();
 }
 
 //init core 
 int core_init(void)
 {
-        Py_Initialize();
         int i;
         void *mem;
+        Py_Initialize();
     	//ignore pipe
    	signal(SIGPIPE,sighandle);
    	signal(SIGINT,sighandle);
@@ -1221,14 +1225,17 @@ int core_init(void)
 
 	if (NULL == misaka_servant.loop)
 	{
-		mlog_debug("Create misaka_master faild!\r\n");
-		return -1;
+	    mlog_debug("Create misaka_master faild!\r\n");
+	    return -1;
 	}
+
+	//register timer manager
+	server_timer_init();
         
         //init the peer list
 	if( NULL == (misaka_servant.peer_list = list_new())){
-		mlog_debug("Create peer_list failed!\r\n");
-		return -1;
+	    mlog_debug("Create peer_list failed!\r\n");
+	    return -1;
 	}else{
 	    misaka_servant.peer_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
@@ -1275,7 +1282,7 @@ int core_init(void)
 	misaka_servant.t_old = (struct ev_periodic *)malloc(sizeof(struct ev_periodic));
         ev_periodic_init(misaka_servant.t_old, misaka_loop_sys, \
                 fmod (ev_now (misaka_servant.loop), OLD_INTERVAL), OLD_INTERVAL, 0);
-        //ev_periodic_start(misaka_servant.loop, misaka_servant.t_old);
+        ev_periodic_start(misaka_servant.loop, misaka_servant.t_old);
 
 	if(!misaka_servant.t_watch)
 	    return -1;

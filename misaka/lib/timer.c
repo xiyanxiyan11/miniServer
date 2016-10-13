@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "misaka.h"
 
 #define LOCK(q) while (__sync_lock_test_and_set(&(q)->lock,1)) {} //加锁
 #define UNLOCK(q) __sync_lock_release(&(q)->lock); //解锁
@@ -17,8 +18,9 @@
 
 //一个定时器内容
 struct timer_event {
-    uint32_t handle;//服务id
-    int session;//会话id
+    //uint32_t handle;//服务id
+    //int session;//会话id
+    void *handle;
 };
 
 //一个定时器
@@ -28,15 +30,15 @@ struct timer_node {
 };
 
 //定时器向量链表
-struct link_list {
+struct timelink_list {
     struct timer_node head;
     struct timer_node *tail;
 };
 
 //全局定时器结构体
 struct timer {
-    struct link_list near[TIME_NEAR];//紧迫定时器向量数组
-    struct link_list t[4][TIME_LEVEL];//4级梯度 松散型定时器向量数组
+    struct timelink_list near[TIME_NEAR];//紧迫定时器向量数组
+    struct timelink_list t[4][TIME_LEVEL];//4级梯度 松散型定时器向量数组
     int lock;//操作锁
     uint32_t time;//已走过的时钟节拍数
     uint32_t current;//启动了多长时间 单位0.01s
@@ -48,7 +50,7 @@ struct timer {
 static struct timer * TI = NULL;
 
 static inline struct timer_node *
-link_clear(struct link_list *list) {
+timelink_clear(struct timelink_list *list) {
     struct timer_node * ret = list->head.next;
     list->head.next = 0;
     list->tail = &(list->head);
@@ -57,7 +59,7 @@ link_clear(struct link_list *list) {
 }
 
 static inline void
-link(struct link_list *list, struct timer_node *node) {
+timelink(struct timelink_list *list, struct timer_node *node) {
     list->tail->next = node;
     list->tail = node;
     node->next = 0;
@@ -68,7 +70,7 @@ add_node(struct timer *T, struct timer_node *node) {
     uint32_t time=node->expire;
     uint32_t current_time=T->time;
     if ((time|TIME_NEAR_MASK)==(current_time|TIME_NEAR_MASK)) {
-        link(&T->near[time&TIME_NEAR_MASK],node);
+        timelink(&T->near[time&TIME_NEAR_MASK],node);
     } else {
         int i;
         uint32_t mask=TIME_NEAR << TIME_LEVEL_SHIFT;
@@ -78,7 +80,7 @@ add_node(struct timer *T, struct timer_node *node) {
             }
             mask <<= TIME_LEVEL_SHIFT;
         }
-        link(&T->t[i][((time>>(TIME_NEAR_SHIFT + i*TIME_LEVEL_SHIFT)) & TIME_LEVEL_MASK)],node);    
+        timelink(&T->t[i][((time>>(TIME_NEAR_SHIFT + i*TIME_LEVEL_SHIFT)) & TIME_LEVEL_MASK)],node);    
     }
 }
 
@@ -97,7 +99,7 @@ timer_add(struct timer *T, void *arg, size_t sz, int time) {
 
 static void
 move_list(struct timer *T, int level, int idx) {
-    struct timer_node *current = link_clear(&T->t[level][idx]);
+    struct timer_node *current = timelink_clear(&T->t[level][idx]);
     while (current) {
         struct timer_node *temp=current->next;
         add_node(T,current);
@@ -108,11 +110,12 @@ move_list(struct timer *T, int level, int idx) {
 //定时节点到了
 static inline void
 dispatch_list(struct timer_node *current) {
+    struct stream *s;
     do {
         struct timer_event * event = (struct timer_event *)(current+1);
-
-        printf("%d, %d\n", event->handle, event->session);
-
+        s = (struct stream*)event->handle;
+        misaka_packet_task_route(s);
+        //printf("%d, %d\n", event->handle, event->session);
         struct timer_node * temp = current;
         current=current->next;
         free(temp);
@@ -124,13 +127,12 @@ timer_execute(struct timer *T) {
     LOCK(T);
     int idx = T->time & TIME_NEAR_MASK;//idx==[0,255]
     while (T->near[idx].head.next) {
-        struct timer_node *current = link_clear(&T->near[idx]);
+        struct timer_node *current = timelink_clear(&T->near[idx]);
         UNLOCK(T);
         // dispatch_list don't need lock T
         dispatch_list(current);
         LOCK(T);
     }
-
     UNLOCK(T);
 }
 
@@ -172,17 +174,15 @@ timer_update(struct timer *T) {
 
 //外部接口 添加一个事件
 int
-server_timer_timeout(uint32_t handle, int time, int session) {
+server_timer_timeout(int time, void *handle) {
     if (time == 0) {
-        printf("%d, %d, %d\n", handle, time, session);
+        //printf("%d, %d, %d\n", handle, time, session);
     } else {
         struct timer_event event;
         event.handle = handle;
-        event.session = session;
         timer_add(TI, &event, sizeof(event), time);
     }
-
-    return session;
+    return 0;
 }
 
 //创建定时器
@@ -194,12 +194,12 @@ server_timer_create_timer() {
     int i,j;
 
     for (i=0;i<TIME_NEAR;i++) {
-        link_clear(&r->near[i]);
+        timelink_clear(&r->near[i]);
     }
 
     for (i=0;i<4;i++) {
         for (j=0;j<TIME_LEVEL;j++) {
-            link_clear(&r->t[i][j]);
+            timelink_clear(&r->t[i][j]);
         }
     }
 
