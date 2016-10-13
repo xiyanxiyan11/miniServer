@@ -11,6 +11,7 @@
  - libev
  - zlog     
  - lua-dev
+ - python-dev
 
 ## 目录结构
  - tool             调试代码
