@@ -18,6 +18,7 @@ int core_register()
     //register event
     //register_c_event("/tmp/task/.libs/libecho.so", EVENT_ECHO);
     register_lua_event("/tmp/task-lua/echo.lua", EVENT_ECHO);
+    //register_python_event("echo", EVENT_ECHO);
 
     misaka_config.role = ROLE_SERVER;
 //support support test

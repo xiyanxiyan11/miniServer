@@ -883,13 +883,17 @@ struct stream *  misaka_packet_process(struct stream *s)
                     {
                         PyObject * pyParams = PyTuple_New(4);
                         PyTuple_SetItem(pyParams, 0, Py_BuildValue("i", s->type));
-                        PyTuple_SetItem(pyParams, 0, Py_BuildValue("i", s->src));
-                        PyTuple_SetItem(pyParams, 0, Py_BuildValue("i", s->dst));
+                        PyTuple_SetItem(pyParams, 1, Py_BuildValue("i", s->src));
+                        PyTuple_SetItem(pyParams, 2, Py_BuildValue("i", s->dst));
                         *(STREAM_PNT(s) + stream_get_endp(s)) = 0;
-                        PyTuple_SetItem(pyParams, 0, Py_BuildValue("s", STREAM_PNT(s)));
+
+                        mlog_info("stream payload %s\n", STREAM_PNT(s));
+
+                        PyTuple_SetItem(pyParams, 3, Py_BuildValue("s", STREAM_PNT(s)));
                         PyObject * pyValue = PyObject_CallObject(handle->pFunc, pyParams);
                         stream_reset(s);
                         PyArg_ParseTuple(pyValue, "i|i|i|s", &s->type, &s->src, &s->dst, payload);
+                        mlog_info("return type %d, src %d, dst %d, %sfrom python\n", s->type, s->src, s->dst, payload);
                         stream_put(s, (void*)payload, strlen(payload) + 1);
                     }
                     break;
@@ -1023,8 +1027,9 @@ void misaka_packet_loop_timer(void){
 //register task for evnet
 int misaka_load_event(int type){
     //get event handle
-    void *tchandle;
     int ret;
+    void *tchandle;
+    PyObject *pDict = NULL;
     lua_State *tlhandle = NULL;
     struct event_handle *handle = &events[type];
     //check event handle type
@@ -1092,12 +1097,41 @@ int misaka_load_event(int type){
             break;
         case PYTHON_PLUGIN_TYPE:
             {
+                PyRun_SimpleString("import sys");
+                PyRun_SimpleString("sys.path.append('./')");
+                PyRun_SimpleString("sys.path.append('/')");
                 handle->pModule = PyImport_ImportModule(handle->path);
-                handle->pFunc = PyObject_GetAttrString(handle->pModule, "misaka_handle");
-                handle->pInit = PyObject_GetAttrString(handle->pModule, "misaka_init");
-                handle->pDeinit = PyObject_GetAttrString(handle->pModule, "misaka_deinit");
+                if(!handle->pModule){
+                    mlog_info("load module load fail\n");
+                    return -1;
+                }
+
+                pDict = PyModule_GetDict(handle->pModule);
+                if(!pDict){
+                    mlog_info("load module load fail\n");
+                    return -1;
+                }
+                
+                handle->pFunc = PyDict_GetItemString(pDict, "misaka_handle");  
+                if ( !handle->pFunc || !PyCallable_Check(handle->pFunc) ) {  
+                        mlog_info("can't find function [misaka_handle]\n");  
+                        return -1;  
+                }  
+
+                handle->pInit = PyDict_GetItemString(pDict, "misaka_init");  
+                if ( !handle->pInit || !PyCallable_Check(handle->pInit) ) {  
+                        mlog_info("can't find function [misaka_init]\n");  
+                        return -1;  
+                }  
+
+                handle->pDeinit = PyDict_GetItemString(pDict, "misaka_deinit");  
+                if ( !handle->pDeinit || !PyCallable_Check(handle->pDeinit) ) {  
+                        mlog_info("can't find function [misaka_deinit]\n");  
+                        return -1;  
+                }  
                 PyObject * pyValue = PyObject_CallObject(handle->pInit, NULL);
                 PyArg_ParseTuple(pyValue, "i", &ret);
+                mlog_info("function [misaka_init] return ret %d\n", ret);  
             }
             break;
         default:
@@ -1174,6 +1208,7 @@ void misaka_loop_sys(struct ev_loop *loop, struct ev_periodic *handle, int event
 //init core 
 int core_init(void)
 {
+        Py_Initialize();
         int i;
         void *mem;
     	//ignore pipe
@@ -1255,7 +1290,6 @@ int core_run(){
         int i;
         int ret;
         mlog_info("misaka start\n");
-        Py_Initialize();
         
         //load all event
         for (i = 0; i < EVENT_MAX; i++){
