@@ -16,7 +16,6 @@ void misaka_handle(struct stream *s)
 
 int misaka_connect(struct peer *p)
 {
-    //p->drole = ++peer_id;
     return 0;
 }
 
