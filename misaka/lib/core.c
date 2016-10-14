@@ -1012,16 +1012,20 @@ void misaka_packet_loop_route(void){
     }
 }
 
-//look timer
+//loop timer
 void misaka_packet_loop_timer(void){
     int sands = 500;
     int type;
+    int tmp;
     struct stream *s;
     struct message_queue *q;
     type = EVENT_SYS;
     q = queues[type];
     for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
-        //try to register timer event 
+        //try register timer event 
+        tmp = s->type;
+        s->type = s->stype;
+        s->stype = tmp; 
         server_timer_timeout(s->interval, s);
     }
     //try to old all timer
@@ -1312,7 +1316,6 @@ int core_run(){
 	}
 
 	Py_Finalize();
-
         mlog_info("misaka stop\n");
         return 0;
 }
