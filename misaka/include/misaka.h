@@ -51,7 +51,6 @@
 //support data cache
 //#define MISAKA_CACHE_SUPPORT                    1
 
-
 #define MISAKA_INIT_START_TIMER  		(5)
 #define MISAKA_DEFAULT_HOLDTIME               	(180)
 #define MISAKA_DEFAULT_KEEPALIVE              	(60)
@@ -75,7 +74,6 @@ enum MISAKA_MODE{
 	   MODE_PASSIVE,   	                //created by listen
            MODE_MAX,
 };
-
                                                 /* MISAKA finite state machine status.  */
 enum MISAKA_TYPE{
            TYPE_NONE = 0,
@@ -308,7 +306,6 @@ enum event_status{
     EVENT_RUN,
 };
 
-
 //@TODO support of code hotplug
 extern void event_load(int type);
 extern void event_start(int type);
@@ -322,6 +319,4 @@ extern struct global_config misaka_config;    //local config handle
 //handle manger
 extern struct global_servant misaka_servant;  //local servant handle    
 
-
 #endif /* __MISAKA_H_ */
-
