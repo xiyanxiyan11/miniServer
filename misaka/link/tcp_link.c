@@ -136,8 +136,7 @@ int tcp_write(struct peer *peer){
         //get first stream;
   	s = misaka_write_packet (peer->obuf);
   	if (!s)
-    		return 0;	
-    		
+    		return 0;		
   	do
         {
       		/* Number of bytes to be sent.  */
@@ -195,7 +194,6 @@ struct peer* peer_tcp_create(const char *dstip, unsigned short dstport, unsigned
         sin.sin_len = socklen;
 #endif
         peer->dsu.sin = sin;
-
 	peer->type = TYPE_TCP;
 	return peer;
 }
@@ -219,7 +217,6 @@ struct peer * tcp_connect_init(const char *str, unsigned short dstport, unsigned
 	peer->mode = MODE_CONNECT;
 	return peer;
 } 
-
 
 /* tcp server init */
 struct peer * tcp_listen_init(int srcport)
