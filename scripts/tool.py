@@ -49,9 +49,3 @@ if __name__ == '__main__':
             mtool.help()
     else:
             mtool.matchfile(srcfile, dstfile)
-
-
-
-
-
-
