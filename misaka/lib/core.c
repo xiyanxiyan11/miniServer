@@ -83,7 +83,7 @@ void *worker(void *arg){
     uint32_t handle;
 
     //mlog_debug("thread start!\n");
-    sands = 3000;
+    sands = MISAKA_TASK_SANDS;
     for(;;){
             q = skynet_globalmq_pop();
             if(!q){
@@ -341,7 +341,6 @@ int peer_delete(struct peer* peer)
 	    if(peer->t_connect)
 	        free(peer->t_connect);
         }
-
 	XFREE(MTYPE_MISAKA_PEER, peer);
 	return 0;
 }
@@ -997,9 +996,8 @@ struct stream * misaka_packet_sys_route(struct stream *s){
 
 //look route packet
 void misaka_packet_loop_route(void){
-    int sands = 10;
+    int sands = MISAKA_ROUTE_SANDS;
     struct stream *rs;
-
     struct listnode *nn;
     struct peer *dpeer; 
 
@@ -1014,11 +1012,12 @@ void misaka_packet_loop_route(void){
 
 //loop timer
 void misaka_packet_loop_timer(void){
-    int sands = 10;
+    int sands = MISAKA_TIMER_SANDS;
     int type;
     int tmp;
     struct stream *s;
     struct message_queue *q;
+	
     type = EVENT_SYS;
     q = queues[type];
     for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
