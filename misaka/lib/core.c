@@ -10,11 +10,11 @@
 #include "msg.h"
 #include "timer.h"
 
-//config manger
-struct global_config misaka_config;    //local config handle
+ //local config handle
+struct global_config misaka_config;   
 
-//handle manger
-struct global_servant misaka_servant;  //local servant handle    
+//local servant handle    
+struct global_servant misaka_servant;  
 
 int misaka_start_jitter ( int time );
 char *peer_uptime (time_t uptime2, char *buf, size_t len,int type);
@@ -44,8 +44,10 @@ void misaka_read(struct ev_loop *loop, struct ev_io *w, int events);
 void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events);
 struct stream * misaka_packet_sys_route(struct stream *s);
 
-struct event_handle events[EVENT_MAX];      //events callback
-struct message_queue *queues[EVENT_MAX];    //events queue, handles by only thread
+//events callback
+struct event_handle events[EVENT_MAX];   
+//events queue, handles by only thread
+struct message_queue *queues[EVENT_MAX];    
 
 //register api from c
 int register_c_event(const char *path, int type){
@@ -65,7 +67,7 @@ int register_lua_event(const char *path, int type){
     return 0;
 }
 
-//register api from lua
+//register api from python
 int register_python_event(const char *path, int type){
     struct event_handle *handle = NULL;
     handle = &events[type];
@@ -292,7 +294,7 @@ int misaka_stop ( struct peer *peer )
        	    close (peer->fd);
             peer->fd = -1;
     	}
-            return 0;
+        return 0;
 }
 
 //udp reconnect or device reconnect 
@@ -452,6 +454,7 @@ struct peer* peer_lookup_dsu(struct list *list, union sockunion *dsu)
 	struct listnode* nn;
 	if(NULL == list)
 	    return NULL;
+	
 	LIST_LOOP(list, peer, nn)
 	{
             if(!sockunion_cmp (&peer->dsu, dsu));
@@ -660,7 +663,6 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
         }
 
   	//mlog_debug("bgs write to peer fd %d!\n", peer->fd);
-
         peer->scount += count;
 
         //write again if packets in fifo
