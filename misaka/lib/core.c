@@ -997,7 +997,7 @@ struct stream * misaka_packet_sys_route(struct stream *s){
 
 //look route packet
 void misaka_packet_loop_route(void){
-    int sands = 5;
+    int sands = 10;
     struct stream *rs;
 
     struct listnode *nn;
@@ -1014,7 +1014,7 @@ void misaka_packet_loop_route(void){
 
 //loop timer
 void misaka_packet_loop_timer(void){
-    int sands = 500;
+    int sands = 10;
     int type;
     int tmp;
     struct stream *s;
