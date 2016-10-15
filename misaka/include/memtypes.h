@@ -25,4 +25,3 @@ enum
 };
 
 #endif /* _QUAGGA_MEMTYPES_H */
-
