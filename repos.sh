@@ -5,7 +5,6 @@
 #  @CreatedTime 2014/09/27
 #  @LastChanged 2014/09/27
 
-
 case "$1" in
     "record" )
         git commit -a
