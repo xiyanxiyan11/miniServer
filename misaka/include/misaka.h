@@ -44,7 +44,9 @@
 //support thread
 #define MISAKA_THREAD_NUM                        (7)
 #define MISAKA_THREAD_SUPPORT                    (1)
-#define MISAKA_THREAD_SANDS                      (16)
+#define MISAKA_TASK_SANDS                        (100)
+#define MISAKA_TIMER_SANDS                       (50)
+#define MISAKA_ROUTE_SANDS 			 (50)
 
 //support data cache
 //#define MISAKA_CACHE_SUPPORT                    1
