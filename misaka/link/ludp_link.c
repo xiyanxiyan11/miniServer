@@ -57,7 +57,6 @@ int ludp_connect(struct peer* peer)
         return connect_success;
 }
 
-
 //start read packet, 0 one packet, 1 read again, 2 full, -1 error
 int ludp_read(struct peer* peer)
 {
