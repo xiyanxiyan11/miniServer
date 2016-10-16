@@ -879,6 +879,7 @@ struct stream *  misaka_packet_process(struct stream *s)
                     s->type = lua_tointeger(handle->lhandle, -1);
                     //mlog_info("lua return type %d\n", s->type);
                     lua_pop(handle->lhandle, 1);
+                    
                     }
                     break;
                 case PYTHON_PLUGIN_TYPE:
