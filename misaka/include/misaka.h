@@ -57,6 +57,10 @@
 #define MISAKA_DEFAULT_CONNECT_RETRY  	        (30)
 #define MISAKA_DEFAULT_SCAN_TIMER		(15)	    
 #define MISAKA_PATH_SIZE			(128)
+
+//first 100 ID as the node id
+#define MISAKA_MAX_NODE                          (100)
+//others as the dst id
 #define MISAKA_MAX_ID                           (99999)
 
 /* link status */
@@ -116,8 +120,11 @@ enum IO_TAT{
 struct peer{
         struct peer *peer;                   /*point to real peer when used as virtual peer*/
 
+        int header_size;                    /*size of the header*/
+        int body_size;                      /*size of the body*/
+
 	int fd;			             /* File descriptor */
-	int id;
+	int id;                              /* Peer Id*/
 	
 	union sockunion su;	             /* Sockunion address of the peer. */
 	union sockunion dsu;	             /* Sockunion address to connect. */
@@ -125,7 +132,7 @@ struct peer{
 	struct sockaddr_un lsu;              /*area udp*/
 	struct sockaddr_un ldsu;             /*area local udp*/  
 
-	unsigned short port;                 /* Destination port for peer */
+	unsigned short port;                 /*Destination port for peer */
 	char path[MISAKA_PATH_SIZE];	     /*path buffer used for device */
 
         int old;                             /*mark when old function needed*/
@@ -162,7 +169,10 @@ struct peer{
         int ( *read)   (struct peer *peer);                         //read handle
         int ( *unpack) (struct stream *s, struct peer *peer);       //unpack handle
         int ( *pack)   (struct stream *s, struct peer *peer);       //pack handle
-        
+        int ( *parser) (struct peer *);
+        int ( *disparser) (struct peer *);
+
+
         int on_connect;
         int on_disconnect;
 

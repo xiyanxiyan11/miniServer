@@ -281,6 +281,8 @@ int misaka_stop ( struct peer *peer )
     	//Stream reset. 
     	peer->packet_size = 0;
 	peer->uptime = 0;
+
+        peer->disparser(peer);
 	
     	// Clear input and output buffer.  
     	if (peer->ibuf)
@@ -398,7 +400,8 @@ struct peer* peer_new()
         peer->reconnect = 0;
 	peer->maxcount = 50;
 	peer->peer = NULL;
-        
+        peer->body_size = 0;
+
 	//update time for peer
 	peer_uptime_reset(peer);
 	
@@ -603,6 +606,8 @@ int misaka_start(struct peer *peer){
                     fmod (ev_now (peer->loop), RECONNECT_INTERVAL), RECONNECT_INTERVAL, 0);
             ev_periodic_start(peer->loop, peer->t_connect);
         }
+
+        peer->parser(peer);
         return 0;
 }
 
@@ -699,7 +704,7 @@ int read_io_action(int event, struct peer *peer){
 #endif
             //mlog_debug("io packet trigger\n");
             //send to it itsself, stolen it and push into queue
-            if(s->dst == misaka_config.role){
+            if(s->nid == misaka_config.role){
                 rs = stream_clone_one(s);
                 //mlog_debug("thread route packet prepare\n");
                 if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
@@ -937,7 +942,7 @@ int misaka_packet_route(struct stream *s){
     }
 
     //lookup route peer
-    p.drole = s->dst;
+    p.drole = s->nid;
     peer = (struct peer *)peer_lookup( (void *)&p);
     
     //drop it
@@ -1260,7 +1265,7 @@ int core_init(void)
 	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
 	}
 
-        misaka_servant.mid = idmaker_new(0, MISAKA_MAX_ID);
+        misaka_servant.mid = idmaker_new(MISAKA_MAX_NODE, MISAKA_MAX_ID);
         if (!misaka_servant.mid){
 	    mlog_debug("Create id maker failed!\r\n");
             return -1;

@@ -5,17 +5,15 @@
 #include "sockunion.h"
 #include "msg.h"
 
-/* Stream buffer. */
+
+//stream buffer
 struct stream
 {
-  struct stream *next;
+  struct stream *next;  //link to next packet
   int owner;
 
-  //union sockunion *su;  //src ip port
-  //union sockunion *dsu; //dst ip port
-    
-  int type;             //packet type
-  int stype;            //route in the server
+  int type;             //dst type
+  int stype;            //src type
 
   union sockunion su;	// Sockunion address of the peer
   union sockunion dsu;	// Sockunion address to connect
@@ -30,19 +28,15 @@ struct stream
   int interval;         //used when as timer msg
   int repeat;           //used when as timer msg
 
-  int sid;              //id of this session
-  int seq;              //seq num
+  int nid;                  //id for the node
+  int sid;                  //session of the packet
+  int seq;                  //seq of the packet
   void *edata[EVENT_MAX];   //private data for every event
 
-  /* Remainder is ***private*** to stream
-   * direct access is frowned upon!
-   * Use the appropriate functions/macros 
-   */
   size_t getp; 		// next get position 
   size_t endp;		// last valid data position */
   size_t size;		// size of data segment 
   unsigned char *data;  // data pointer
-
 };
 
 /* First in first out queue structure. */
