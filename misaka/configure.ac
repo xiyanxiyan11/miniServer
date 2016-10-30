@@ -36,5 +36,5 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([alarm dup2 gettimeofday inet_ntoa memset setenv socket strchr strerror strrchr strstr strtol])
 
-AC_CONFIG_FILES([Makefile app/Makefile lib/Makefile task/Makefile app/echo/Makefile link/Makefile])
+AC_CONFIG_FILES([Makefile app/Makefile lib/Makefile task/Makefile app/echo/Makefile link/Makefile parser/Makefile])
 AC_OUTPUT

@@ -1,1 +1,1 @@
-SUBDIRS=lib link task app
+SUBDIRS=lib link task parser app
