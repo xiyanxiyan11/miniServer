@@ -59,43 +59,29 @@ int tcp_passive(struct peer *peer){
 int tcp_read(struct peer* peer)
 {
 	int nbytes;
-	int type;
-	int close = 0;
-
-  	nbytes = read(peer->fd, STREAM_PNT(peer->ibuf), peer->packet_size);
+        nbytes = stream_read_try(peer->ibuf, peer->fd, peer->packet_size);
   	//mlog_debug("%d bytes read from peer %d, drole %d\n", nbytes, peer->fd, peer->drole);
 
-  	/* If read byte is smaller than zero then error occured. */
-  	if (nbytes < 0) 
-  	{
-            if(errno == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
-                return IO_CHECK; //need read again
-            else{
-                close = 1;
-            }
+        //EINTER
+  	if (-2 == nbytes){
+            return IO_CHECK; //need read again
         }   
   	
-  	if(nbytes == 0){
-  	    close = 1;    
-  	}
-        
-        if(close){
-            //mlog_debug("tcp read error trigger:%s\n",strerror(errno));
+  	//ERROR or CLOSE
+  	if(-1 == nbytes){
             if(peer->mode == MODE_PASSIVE)
                 return IO_PASSIVE_CLOSE;
             else
                 return IO_CLOSE;
         }
 
-  	if(nbytes  < peer->packet_size){
-  	    peer->ibuf->endp += nbytes;
-  	    peer->packet_size -= nbytes;
+        peer->packet_size -= nbytes;
+
+        if(peer->packet_size){
   	    return IO_PARTIAL;
-  	}else{
-  	    peer->ibuf->endp += nbytes;
-  	    peer->packet_size = 0;
+        }else{
   	    return IO_CHECK;
-  	}
+        }
 }
 
 //start read 
@@ -120,9 +106,6 @@ int tcp_accept(struct peer *peer){
         cpeer->on_connect = peer->on_connect;
         cpeer->on_disconnect = peer->on_disconnect;
         cpeer->parser = peer->parser;
-
-        //trans packet_size attribute to passive peer
-        //cpeer->packet_size = peer->packet_size;
 
         //call unpack to distribute id for this peer
         if(ret == IO_PASSIVE_CLOSE){
