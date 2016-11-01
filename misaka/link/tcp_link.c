@@ -15,7 +15,7 @@ int tcp_connect(struct peer* peer){
 
 	if (peer->fd < 0)
 	{
-		mlog_debug("socket: %s\n", strerror(errno));
+		mlog_debug("socket: %s", strerror(errno));
 		return connect_error;
 	}
 	return sockunion_connect(peer->fd, &peer->dsu, (peer->dsu.sin.sin_port), ifindex);
@@ -27,11 +27,11 @@ int tcp_listen(struct peer *peer){
 	if(peer->fd < 0)
 	    peer->fd = socket(AF_INET, SOCK_STREAM, 0);
 	
-	mlog_debug("tcp listen trigger\n");
+	mlog_debug("tcp listen trigger");
 	
 	if (peer->fd < 0)
 	{
-		mlog_debug("socket: %s\n", strerror(errno));
+		mlog_debug("socket: %s", strerror(errno));
 		return connect_error;
 	}
         
@@ -60,7 +60,7 @@ int tcp_read(struct peer* peer)
 {
 	int nbytes;
         nbytes = stream_read_try(peer->ibuf, peer->fd, peer->packet_size);
-  	//mlog_debug("%d bytes read from peer %d, drole %d\n", nbytes, peer->fd, peer->drole);
+  	//mlog_debug("%d bytes read from peer %d, drole %d", nbytes, peer->fd, peer->drole);
 
         //EINTER
   	if (-2 == nbytes){
@@ -93,10 +93,10 @@ int tcp_accept(struct peer *peer){
         if(fd < 0)
             return IO_ERROR;
     
-        mlog_debug("accept tcp fd %d \n", fd);
+        mlog_debug("accept tcp fd %d", fd);
         cpeer = tcp_passive_init(&su, fd);
         if(NULL == cpeer){
-            mlog_debug("alloc  peer fail from cache\n");
+            mlog_debug("alloc  peer fail from cache");
             close(fd);
             return IO_ACCEPT;
         }
@@ -124,7 +124,7 @@ int tcp_write(struct peer *peer){
   	int pcount = 0;
       	int writenum;
      
-        //mlog_debug("tcp write trigger with packet %d\n", peer->obuf->count);
+        //mlog_debug("tcp write trigger with packet %d", peer->obuf->count);
         //get first stream;
   	s = misaka_write_packet (peer->obuf);
   	if (!s)
@@ -134,7 +134,7 @@ int tcp_write(struct peer *peer){
       		/* Number of bytes to be sent.  */
                 writenum = stream_get_endp (s) - stream_get_getp (s);
       		num = write (peer->fd, STREAM_PNT (s), writenum);
-      		//mlog_debug("peer fd %d write %d->%d\n", peer->fd, writenum, num);
+      		//mlog_debug("peer fd %d write %d->%d", peer->fd, writenum, num);
                     
       		if (num < 0)
 		{

@@ -84,12 +84,12 @@ void *worker(void *arg){
     int sands;
     uint32_t handle;
 
-    //mlog_debug("thread start!\n");
+    //mlog_debug("thread start!");
     sands = MISAKA_TASK_SANDS;
     for(;;){
             q = skynet_globalmq_pop();
             if(!q){
-                //mlog_debug("thread start fail by empty queue pop!\n");
+                //mlog_debug("thread start fail by empty queue pop!");
                 break;
             }
             handle = skynet_mq_handle(q);
@@ -97,18 +97,18 @@ void *worker(void *arg){
             //TODO loadbalance policy
             for(; sands && 0 == skynet_mq_pop(q, &s); --sands){
                 if(handle != EVENT_NET){
-                    //mlog_debug("thread active handle %d (task) success!\n", handle);
+                    //mlog_debug("thread active handle %d (task) success!", handle);
                     misaka_packet_process(s);
                 }else{
-                    //mlog_debug("thread active handle %d (net) error!\n", handle);
+                    //mlog_debug("thread active handle %d (net) error!", handle);
                 }
             }
             if(0 == sands){
-                //mlog_debug("thread stop by sands!\n");
+                //mlog_debug("thread stop by sands!");
                 skynet_globalmq_push(q);
                 break;
             }else{
-                //mlog_debug("thread stop by empty pop!\n");
+                //mlog_debug("thread stop by empty pop!");
             }
     }
 }
@@ -128,7 +128,7 @@ void peer_register(struct peer *peer){
     if (peer->on_connect){
 	LIST_LOOP(misaka_servant.event_list , handle, nn)
 	{
-	    mlog_debug("register handle %d create peer %d\n", handle->type, peer->drole);
+	    mlog_debug("register handle %d create peer %d", handle->type, peer->drole);
 	    if(handle->connect)
 	        handle->connect(peer);
 	}
@@ -169,23 +169,23 @@ int  peer_default_pack(struct stream *s, struct peer *peer){
 
 //dump peer info
 void peer_dump(struct peer *peer){
-    mlog_debug("peer id: %d\n", peer->id);
-    mlog_debug("peer fd: %d\n", peer->fd);
-    mlog_debug("peer su: \n");
+    mlog_debug("peer id: %d", peer->id);
+    mlog_debug("peer fd: %d", peer->fd);
+    mlog_debug("peer su: ");
     sockunion_dump(&peer->su);
-    mlog_debug("peer su: \n");
+    mlog_debug("peer su: ");
     sockunion_dump(&peer->dsu);
-    mlog_debug("peer path: %s\n", peer->path);
-    mlog_debug("peer type: %d\n", peer->type);
-    mlog_debug("peer mode: %d\n", peer->mode);
-    mlog_debug("peer port: %d\n", ntohs(peer->port));
-    mlog_debug("peer drole: %d\n", peer->drole);
-    mlog_debug("peer role: %d\n",  peer->role);
-    mlog_debug("peer quick: %d\n",  peer->quick);
-    mlog_debug("peer reconnect: %d\n",  peer->reconnect);
-    mlog_debug("peer listens: %d\n",  peer->listens);
-    mlog_debug("peer send: %d\n",     peer->scount);
-    mlog_debug("peer recive: %d\n",   peer->rcount);
+    mlog_debug("peer path: %s", peer->path);
+    mlog_debug("peer type: %d", peer->type);
+    mlog_debug("peer mode: %d", peer->mode);
+    mlog_debug("peer port: %d", ntohs(peer->port));
+    mlog_debug("peer drole: %d", peer->drole);
+    mlog_debug("peer role: %d",  peer->role);
+    mlog_debug("peer quick: %d",  peer->quick);
+    mlog_debug("peer reconnect: %d",  peer->reconnect);
+    mlog_debug("peer listens: %d",  peer->listens);
+    mlog_debug("peer send: %d",     peer->scount);
+    mlog_debug("peer recive: %d",   peer->rcount);
 }
 
 //process signal
@@ -201,7 +201,7 @@ void sighandle(int num){
                     exit(0);
                 break;
             case SIGPIPE:
-                    mlog_debug("signal pip\n");
+                    mlog_debug("signal pip");
                 break;
             default:
                 break;
@@ -271,9 +271,9 @@ int misaka_stop ( struct peer *peer )
 	    ev_io_stop(peer->loop, peer->t_write);
     	
     	if(1 == peer->quick){   
-             mlog_debug("stop peer fd %d in quick\n", peer->fd);    	
+             mlog_debug("stop peer fd %d in quick", peer->fd);    	
     	}else{
-             mlog_debug("stop peer fd %d in normal\n", peer->fd);    	
+             mlog_debug("stop peer fd %d in normal", peer->fd);    	
     	    if(1 == ev_is_active(peer->t_connect))
 	        ev_periodic_stop(peer->loop, peer->t_connect);
         }
@@ -371,7 +371,7 @@ struct peer* peer_new()
 	//create read buffer
 	peer->ibuf = stream_new(MISAKA_MAX_PACKET_SIZE);
 	if(NULL == peer->ibuf){
-            mlog_debug("alloc ibuf fail\n");
+            mlog_debug("alloc ibuf fail");
 	    XFREE(MTYPE_MISAKA_PEER, peer);
 	    return NULL;
         }
@@ -381,7 +381,7 @@ struct peer* peer_new()
 
 	peer->obuf = stream_fifo_new();
 	if(NULL == peer->obuf){
-            mlog_debug("alloc obuf fail\n");
+            mlog_debug("alloc obuf fail");
 	    stream_free(peer->ibuf);
 	    XFREE(MTYPE_MISAKA_PEER, peer);
 	    return NULL;
@@ -469,7 +469,7 @@ struct peer* peer_lookup_dsu(struct list *list, union sockunion *dsu)
 //action when connect success
 int misaka_start_success ( struct peer *peer )
 {
-        mlog_debug("bgs connect peer->fd: %d success\n", peer->fd);
+        mlog_debug("bgs connect peer->fd: %d success", peer->fd);
   	peer->status = TAT_ESTA;				        
         
         //update time
@@ -480,7 +480,7 @@ int misaka_start_success ( struct peer *peer )
 
         //set link nonblock
         if(set_nonblocking(peer->fd) <0 ){                          
-            mlog_debug("set nonblock fail\n");
+            mlog_debug("set nonblock fail");
             if(peer->fd > 0){
                 close(peer->fd);
             }
@@ -507,7 +507,7 @@ int misaka_start_success ( struct peer *peer )
 //action when connect progress
 int misaka_start_progress ( struct peer *peer )
 {
-        //mlog_debug("bgs connect progress\n");
+        //mlog_debug("bgs connect progress");
   	//set establish flag
   	peer->status = TAT_IDLE;		    
         
@@ -535,20 +535,20 @@ void connect_status_trigger(int status, struct peer *peer){
         switch ( status )
     	{
         	case connect_success:	
-        	        mlog_debug("connect in success\n");
+        	        mlog_debug("connect in success");
         	        misaka_start_success(peer);
         	        if(1 == ev_is_active(peer->t_connect));
         	            ev_periodic_stop(peer->loop, peer->t_connect);
         	        break;
         	case connect_in_progress:	
-        	        mlog_debug("connect in progress\n");
+        	        mlog_debug("connect in progress");
                         misaka_start_progress( peer);
         	        if(1 == ev_is_active(peer->t_connect));
         	            ev_periodic_stop(peer->loop, peer->t_connect);
                         break;
        	        case connect_error:
                 default:
-                        mlog_debug("connect error\n");
+                        mlog_debug("connect error");
             		break;
     	}	
 }
@@ -570,7 +570,6 @@ void misaka_start_thread(struct ev_loop *loop, struct ev_periodic *handle, int e
     	return ;
 }
 
-
 //action when timer register
 void misaka_timer_thread(struct ev_loop *loop, struct ev_periodic *handle, int events)
 {
@@ -590,7 +589,6 @@ void misaka_timer_thread(struct ev_loop *loop, struct ev_periodic *handle, int e
     	return ;
 }
 
-
 //entry to active peer
 int misaka_start(struct peer *peer){
         if(peer->quick){                
@@ -606,7 +604,6 @@ int misaka_start(struct peer *peer){
                     fmod (ev_now (peer->loop), RECONNECT_INTERVAL), RECONNECT_INTERVAL, 0);
             ev_periodic_start(peer->loop, peer->t_connect);
         }
-
         peer->parser(peer);
         return 0;
 }
@@ -638,15 +635,15 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
   	peer = (struct peer *)handle->data;
   	
   	if(!peer){
-  	    mlog_debug("get empty peer from misaka_write\n");
+  	    mlog_debug("get empty peer from misaka_write");
   	    return;
   	}
 
-        //mlog_debug("peer %d write is active %d\n", peer->drole, ev_is_active(peer->t_read));
+        //mlog_debug("peer %d write is active %d", peer->drole, ev_is_active(peer->t_read));
   	//can't write when not connected
   	if (peer->status != TAT_ESTA)
         {
-  	        //mlog_debug("bgs peer fd %d not establish active\n", peer->fd);
+  	        //mlog_debug("bgs peer fd %d not establish active", peer->fd);
       		return;
         }
 
@@ -654,7 +651,7 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
         count = peer->write(peer);  
 
         if(count < 0){
-            //mlog_debug("peer fd %d close in write process\n", peer->fd);
+            //mlog_debug("peer fd %d close in write process", peer->fd);
 	    
 	    //peer not healthy
 	    if(peer->mode == MODE_PASSIVE){
@@ -667,7 +664,7 @@ void misaka_write(struct ev_loop *loop, struct ev_io *handle, int events)
             return;
         }
 
-  	//mlog_debug("bgs write to peer fd %d!\n", peer->fd);
+  	//mlog_debug("bgs write to peer fd %d!", peer->fd);
         peer->scount += count;
 
         //write again if packets in fifo
@@ -693,7 +690,7 @@ int read_io_action(int event, struct peer *peer){
     int ret = event;
     s = peer->ibuf;
     s->src = peer->drole;
-    //mlog_debug("read io action packet from %d\n", s->src);
+    //mlog_debug("read io action packet from %d", s->src);
     switch(ret){
         case IO_PACKET:
             s->flag = 0;   //mark as unused
@@ -702,14 +699,14 @@ int read_io_action(int event, struct peer *peer){
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
-            //mlog_debug("io packet trigger\n");
+            //mlog_debug("io packet trigger");
             //send to it itsself, stolen it and push into queue
             if(s->nid == misaka_config.role){
                 rs = stream_clone_one(s);
-                //mlog_debug("thread route packet prepare\n");
+                //mlog_debug("thread route packet prepare");
                 if(rs && rs->type > EVENT_NONE && rs->type < EVENT_NET)
                 {
-                    //mlog_debug("task route packet start\n");
+                    //mlog_debug("task route packet start");
                     
                     //system packet route here!!!
                     if(peer->sys){
@@ -727,6 +724,7 @@ int read_io_action(int event, struct peer *peer){
                 }
             }
             stream_reset(s);
+            peer->parser(peer);
             break;
         case IO_PARTIAL: 
             break;
@@ -744,8 +742,6 @@ int read_io_action(int event, struct peer *peer){
             misaka_reconnect(peer);
             break;
         case IO_PASSIVE_CLOSE:
-            //mlog_debug("peer passive delete peer fd %d\n", peer->fd);
-            //unregister peer in hash
             peer_unregister(peer);
             peer_delete(peer);
             break;
@@ -769,7 +765,7 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
     peer = (struct peer *)handle->data;
 
     if(NULL == peer){
-        //mlog_debug("empty peer get from misaka_read\n");
+        //mlog_debug("empty peer get from misaka_read");
         return;
     }
 
@@ -779,7 +775,7 @@ void misaka_read(struct ev_loop *loop, struct ev_io *handle, int events)
 
     if (peer->fd < 0)
     {
-        mlog_debug("invalid peer can't read fd %d\n", peer->fd);
+        mlog_debug("invalid peer can't read fd %d", peer->fd);
         return;
     }
     
@@ -846,9 +842,9 @@ struct stream *  misaka_packet_process(struct stream *s)
                     {
                     
                     //mlog_info("action handle in lua!");
-                    //mlog_info("lua call type %d\n", s->type);
-                    //mlog_info("lua call src %d\n", s->src);
-                    //mlog_info("lua call dst %d\n", s->dst);
+                    //mlog_info("lua call type %d", s->type);
+                    //mlog_info("lua call src %d", s->src);
+                    //mlog_info("lua call dst %d", s->dst);
                     //call function
                     lua_getglobal(handle->lhandle, "misaka_handle");
                     lua_pushinteger(handle->lhandle, s->type);
@@ -858,11 +854,11 @@ struct stream *  misaka_packet_process(struct stream *s)
                     *(STREAM_PNT(s) + stream_get_endp(s)) = 0;
                     lua_pushstring(handle->lhandle, STREAM_PNT(s));
 
-                    //mlog_info("call lua start\n");
+                    //mlog_info("call lua start");
                     ret = lua_pcall(handle->lhandle, 4, 4, 0);
                     
                     if(ret != 0){
-                        mlog_info("call lua fail\n");
+                        mlog_info("call lua fail");
                         stream_reset(s);
                         return s;
                     }
@@ -874,15 +870,15 @@ struct stream *  misaka_packet_process(struct stream *s)
                     lua_pop(handle->lhandle, 1);
 
                     s->dst = lua_tointeger(handle->lhandle,  -1);
-                    //mlog_info("lua return dst %d\n", s->dst);
+                    //mlog_info("lua return dst %d", s->dst);
                     lua_pop(handle->lhandle, 1);
 
                     s->src = lua_tointeger(handle->lhandle,  -1);
-                    //mlog_info("lua return src %d\n", s->src);
+                    //mlog_info("lua return src %d", s->src);
                     lua_pop(handle->lhandle, 1);
                     
                     s->type = lua_tointeger(handle->lhandle, -1);
-                    //mlog_info("lua return type %d\n", s->type);
+                    //mlog_info("lua return type", s->type);
                     lua_pop(handle->lhandle, 1);
                     
                     }
@@ -895,13 +891,13 @@ struct stream *  misaka_packet_process(struct stream *s)
                         PyTuple_SetItem(pyParams, 2, Py_BuildValue("i", s->dst));
                         *(STREAM_PNT(s) + stream_get_endp(s)) = 0;
 
-                        mlog_info("stream payload %s\n", STREAM_PNT(s));
+                        mlog_info("stream payload %s", STREAM_PNT(s));
 
                         PyTuple_SetItem(pyParams, 3, Py_BuildValue("s", STREAM_PNT(s)));
                         PyObject * pyValue = PyObject_CallObject(handle->pFunc, pyParams);
                         stream_reset(s);
                         PyArg_ParseTuple(pyValue, "i|i|i|s", &s->type, &s->src, &s->dst, payload);
-                        mlog_info("return type %d, src %d, dst %d, %sfrom python\n", s->type, s->src, s->dst, payload);
+                        mlog_info("return type %d, src %d, dst %d, %sfrom python", s->type, s->src, s->dst, payload);
                         stream_put(s, (void*)payload, strlen(payload) + 1);
                     }
                     break;
@@ -947,7 +943,7 @@ int misaka_packet_route(struct stream *s){
     
     //drop it
     if(!peer){  
-        mlog_debug("packet to unknown peer %d\n", s->dst);
+        mlog_debug("packet to unknown peer %d", s->dst);
         stream_free(s);
         return -1;
     }
@@ -967,7 +963,7 @@ int misaka_packet_route(struct stream *s){
                 peer->t_write->data = peer;
                 ev_io_start(peer->loop, peer->t_write);
         }else{
-                //mlog_debug("misaka_write peer %d in running in route!!!\n", peer->drole);
+                //mlog_debug("misaka_write peer %d in running in route!!!", peer->drole);
         }
     }
     return 0;
@@ -1062,7 +1058,7 @@ int misaka_load_event(int type){
             {
                 tchandle = dlopen(handle->path, RTLD_NOW);
                 if(!tchandle){
-                    mlog_debug("open so in path %s fail\n", handle->path);
+                    mlog_debug("open so in path %s fail", handle->path);
                     return -1;
                 }
                 handle->func   = (void (*)(struct stream *))dlsym(tchandle, "misaka_handle");
@@ -1104,7 +1100,7 @@ int misaka_load_event(int type){
                 ret = lua_pcall(handle->lhandle, 0, 1, 0);
                     
                 if(ret != 0){
-                        mlog_info("call lua init fail\n");
+                        mlog_info("call lua init fail");
                 }
                 ret = lua_tointeger (handle->lhandle, -1);
                 lua_pop(handle->lhandle, 1);
@@ -1117,36 +1113,36 @@ int misaka_load_event(int type){
                 PyRun_SimpleString("sys.path.append('/')");
                 handle->pModule = PyImport_ImportModule(handle->path);
                 if(!handle->pModule){
-                    mlog_info("load module load fail\n");
+                    mlog_info("load module load fail");
                     return -1;
                 }
 
                 pDict = PyModule_GetDict(handle->pModule);
                 if(!pDict){
-                    mlog_info("load module load fail\n");
+                    mlog_info("load module load fail");
                     return -1;
                 }
                 
                 handle->pFunc = PyDict_GetItemString(pDict, "misaka_handle");  
                 if ( !handle->pFunc || !PyCallable_Check(handle->pFunc) ) {  
-                        mlog_info("can't find function [misaka_handle]\n");  
+                        mlog_info("can't find function [misaka_handle]");  
                         return -1;  
                 }  
 
                 handle->pInit = PyDict_GetItemString(pDict, "misaka_init");  
                 if ( !handle->pInit || !PyCallable_Check(handle->pInit) ) {  
-                        mlog_info("can't find function [misaka_init]\n");  
+                        mlog_info("can't find function [misaka_init]");  
                         return -1;  
                 }  
 
                 handle->pDeinit = PyDict_GetItemString(pDict, "misaka_deinit");  
                 if ( !handle->pDeinit || !PyCallable_Check(handle->pDeinit) ) {  
-                        mlog_info("can't find function [misaka_deinit]\n");  
+                        mlog_info("can't find function [misaka_deinit]");  
                         return -1;  
                 }  
                 PyObject * pyValue = PyObject_CallObject(handle->pInit, NULL);
                 PyArg_ParseTuple(pyValue, "i", &ret);
-                mlog_info("function [misaka_init] return ret %d\n", ret);  
+                mlog_info("function [misaka_init] return ret %d", ret);  
             }
             break;
         default:
@@ -1206,7 +1202,7 @@ void misaka_core_watch(struct ev_loop *loop, struct ev_periodic *handle, int eve
     LIST_LOOP(misaka_servant.peer_list, peer, nn)
     {
         peer_dump(peer);
-        mlog_debug("\n");
+        mlog_debug("");
     }
 }
 
@@ -1236,7 +1232,7 @@ int core_init(void)
 
 	if (NULL == misaka_servant.loop)
 	{
-	    mlog_debug("Create misaka_master faild!\r\n");
+	    mlog_debug("Create misaka_master faild!");
 	    return -1;
 	}
 
@@ -1245,7 +1241,7 @@ int core_init(void)
         
         //init the peer list
 	if( NULL == (misaka_servant.peer_list = list_new())){
-	    mlog_debug("Create peer_list failed!\r\n");
+	    mlog_debug("Create peer_list failed!");
 	    return -1;
 	}else{
 	    misaka_servant.peer_list->cmp =  (int (*) (void *, void *)) peer_cmp;
@@ -1259,7 +1255,7 @@ int core_init(void)
         
         //init the event list
 	if( NULL == misaka_servant.event_list){
-		mlog_debug("Create event_list failed!\r\n");
+		mlog_debug("Create event_list failed!");
 		return -1;
 	}else{
 	    misaka_servant.event_list->cmp =  (int (*) (void *, void *)) peer_cmp;
@@ -1267,7 +1263,7 @@ int core_init(void)
 
         misaka_servant.mid = idmaker_new(MISAKA_MAX_NODE, MISAKA_MAX_ID);
         if (!misaka_servant.mid){
-	    mlog_debug("Create id maker failed!\r\n");
+	    mlog_debug("Create id maker failed!");
             return -1;
         }
 
@@ -1307,13 +1303,13 @@ int core_init(void)
 int core_run(){
         int i;
         int ret;
-        mlog_info("misaka start\n");
+        mlog_info("misaka start");
         
         //load all event
         for (i = 0; i < EVENT_MAX; i++){
             ret = misaka_load_event(i);
             if(ret < 0){
-                mlog_info("register api %d fail with plugin %d\n", i, events[i].plug);
+                mlog_info("register api %d fail with plugin %d", i, events[i].plug);
                 return -1;
             }   
         }
@@ -1323,6 +1319,6 @@ int core_run(){
 	}
 
 	Py_Finalize();
-        mlog_info("misaka stop\n");
+        mlog_info("misaka stop");
         return 0;
 }

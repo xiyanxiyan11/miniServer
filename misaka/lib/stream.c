@@ -31,7 +31,7 @@
  * using stream_put..._at() functions.
  */
 #define STREAM_WARN_OFFSETS(S) \
-  mlog_warn ("&(struct stream): %p, size: %lu, endp: %lu, getp: %lu\n", \
+  mlog_warn ("&(struct stream): %p, size: %lu, endp: %lu, getp: %lu", \
              (S), \
              (unsigned long) (S)->size, \
              (unsigned long) (S)->getp, \
@@ -57,7 +57,7 @@
   do { \
     if (((S)->endp + (Z)) > (S)->size) \
       { \
-        mlog_warn ("CHECK_SIZE: truncating requested size %lu\n", \
+        mlog_warn ("CHECK_SIZE: truncating requested size %lu", \
                    (unsigned long) (Z)); \
         STREAM_WARN_OFFSETS(S); \
         (Z) = (S)->size - (S)->endp; \

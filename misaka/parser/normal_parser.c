@@ -1,9 +1,9 @@
 #include <misaka.h>
 
-/*pay load as this 
-|------------------------------------------------
+/*payload format
+|-----------------------------------------------------
 |magic   |nid|dst|type|sid|seq|payloadLen|payloadData|
-|------------------------------------------------
+|-----------------------------------------------------
 * 8 +      4 + 4 + 4 +  4 + 4 +   4       =   32
 */
 
@@ -22,7 +22,6 @@ int normal_parser_init(struct peer *peer){
 int normal_parser_unpack(struct stream *s, struct peer *peer){
     int length;
     if(peer->body_size == 0){
-        //try to find the header
         length = stream_get_endp(s) - stream_get_getp(s);
         if(length < MAGIC_HEADER_SIZE){
             return IO_PARTIAL; 
