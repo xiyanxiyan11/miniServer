@@ -342,6 +342,7 @@ int peer_delete(struct peer* peer)
 	if(peer->quick){
 	
 	}else{
+	    
 	    if(peer->t_connect)
 	        free(peer->t_connect);
         }
@@ -694,8 +695,8 @@ int read_io_action(int event, struct peer *peer){
     switch(ret){
         case IO_PACKET:
             s->flag = 0;   //mark as unused
-            //@TODO redir for echoserver test
 #if 1
+            //@TODO redir for echoserver test
             s->dst = misaka_config.role;
             s->type = EVENT_ECHO;
 #endif
@@ -751,7 +752,8 @@ int read_io_action(int event, struct peer *peer){
     return 0;
 }
 
-/** @brief Starting point of packet process function. 
+/** 
+ *  @brief Starting point of packet process function. 
  *  @param[in] thread virtual thread handle 
  *
  */
