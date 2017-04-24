@@ -4,6 +4,15 @@
  - Tiny Server frame
  - work in layer 4
 
+# Feature
+ - thread pool
+ - task distribute
+ - tcp, udp 
+ - link support register api
+ - protocol support register api
+ - dynamic load
+
+
 ## DEPEND
  - libev
  - zlog     
@@ -32,14 +41,6 @@
     - task-lua      app code(lua)
     - task-python   app code(python)
     - app           app Entry
-
-# Support
- - thread pool
- - task distribute
- - tcp, udp 
- - link support register api
- - protocol support register api
- - dynamic load
 
 ## Notie
  - In rebuild
