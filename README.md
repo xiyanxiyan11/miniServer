@@ -20,7 +20,9 @@
 ## Build 
  ```
     autoconf
+    
     ./configure 
+    
     make 
     
     ./app
