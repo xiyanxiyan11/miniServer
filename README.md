@@ -2,14 +2,13 @@
 
 ## Brief 
  - Tiny Server frame
- - work in layer 4
 
 # Feature
- - thread pool
+ - thread pools
  - task distribute
- - tcp, udp 
- - link support register api
- - protocol support register api
+ - tcp, udp ...
+ - register api for more link to support
+ - register api for more protocol to support
  - dynamic load
 
 
@@ -38,8 +37,8 @@
     - link          link plugin
     - parse         protocol plugin
     - task          app code(c)
-    - task-lua      app code(lua)
-    - task-python   app code(python)
+    - task-lua      app code(lua, in build)
+    - task-python   app code(python, in build)
     - app           app Entry
 
 ## Notie
