@@ -6,7 +6,6 @@
 # Feature
  - thread pools
  - task distribute
- - tcp, udp ...
  - register api for more link to support
  - register api for more protocol to support
  - dynamic load
