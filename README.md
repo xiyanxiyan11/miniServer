@@ -18,16 +18,22 @@
  - python-dev
 
 ## Build 
- ```
-    autoconf
-    
-    ./configure 
-    
-    make 
-    
-    ./app
 
- ```
+```
+autoconf
+```
+
+```    
+./configure
+```
+   
+```
+make
+```
+
+```
+./app
+```
 
 ## File
  - tool             tool code 
@@ -46,6 +52,7 @@
  - In rebuild
 
 # Author 
-    - name: hongwei mei
-    - email:xiyanxiyan10@hotmail.com
-    - weixin: xiyanxiyan10
+
+ - name: hongwei mei
+ - email:xiyanxiyan10@hotmail.com
+ - weixin: xiyanxiyan10
